@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Orçamento de Obra</title>
+
+<!-- Office.js -->
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
+
+  :root {
+    --bg:       #0f1117;
+    --surface:  #181c27;
+    --border:   #2a2f3e;
+    --accent:   #c8f060;
+    --accent2:  #60d4f0;
+    --danger:   #f06060;
+    --warn:     #f0c060;
+    --text:     #e8eaf0;
+    --muted:    #6b7280;
+    --radius:   6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 11px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 16px 14px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  header p { color: var(--muted); font-size: 10px; margin-top: 4px; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .tab {
+    flex: 1;
+    padding: 9px 4px;
+    text-align: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── CONTENT ── */
+  .pane { display: none; padding: 12px 14px; }
+  .pane.active { display: block; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 14px 0 8px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* ── BTN ── */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    transition: all .15s;
+    text-align: center;
+  }
+  .btn-primary { background: var(--accent); color: #0f1117; }
+  .btn-primary:hover { background: #d9ff70; transform: translateY(-1px); }
+  .btn-secondary { background: var(--border); color: var(--text); margin-top: 6px; }
+  .btn-secondary:hover { background: #363b4e; }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 6px; }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 6px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--text);
+  }
+  .card-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+
+  /* ── STATUS BADGE ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .badge-green  { background: rgba(200,240,96,.15); color: var(--accent); border: 1px solid rgba(200,240,96,.3); }
+  .badge-yellow { background: rgba(240,192,96,.15); color: var(--warn);   border: 1px solid rgba(240,192,96,.3); }
+  .badge-red    { background: rgba(240,96,96,.15);  color: var(--danger); border: 1px solid rgba(240,96,96,.3);  }
+  .badge-muted  { background: rgba(107,114,128,.15);color: var(--muted);  border: 1px solid rgba(107,114,128,.3); }
+
+  /* ── ROW SUPPLIER ── */
+  .supplier-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .supplier-row:hover { border-color: var(--accent); background: rgba(200,240,96,.04); }
+  .supplier-row.selected { border-color: var(--accent); background: rgba(200,240,96,.08); }
+  .supplier-row .check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .supplier-row.selected .check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .supplier-row.selected .check::after {
+    content: '✓';
+    font-size: 9px;
+    color: #0f1117;
+    font-weight: 700;
+  }
+  .supplier-info { flex: 1; }
+  .supplier-name { font-size: 11px; font-weight: 500; }
+  .supplier-value { font-size: 12px; font-weight: 500; color: var(--accent2); }
+
+  /* ── COMPARE TABLE ── */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .compare-table th {
+    text-align: left;
+    padding: 6px 8px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+    font-size: 9px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .compare-table td { padding: 7px 8px; border-bottom: 1px solid rgba(42,47,62,.6); }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: rgba(200,240,96,.03); }
+  .best-value { color: var(--accent); font-weight: 500; }
+
+  /* ── TOTAL BAR ── */
+  .total-bar {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-bar .label { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .total-bar .value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--accent); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all .3s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── LOADING ── */
+  #loading {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 100;
+  }
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { color: var(--muted); font-size: 11px; }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 24px 0; color: var(--muted); }
+  .empty .icon { font-size: 28px; margin-bottom: 8px; }
+
+  /* ── EXPORT SECTION ── */
+  .export-option {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .export-option h3 { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .export-option p { color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  .scrollable { overflow-y: auto; max-height: calc(100vh - 180px); padding-bottom: 60px; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Carregando planilha…</p>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <h1>ORÇAMENTO</h1>
+    <p id="obra-nome">Carregando…</p>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="selecionar">Selecionar</div>
+    <div class="tab" data-tab="comparar">Comparar</div>
+    <div class="tab" data-tab="exportar">Exportar</div>
+  </div>
+
+  <!-- ══════════ PANE: SELECIONAR ══════════ -->
+  <div class="pane active scrollable" id="pane-selecionar">
+    <div class="section-label">Categorias e Fornecedores</div>
+    <div id="supplier-list"></div>
+  </div>
+
+  <!-- ══════════ PANE: COMPARAR ══════════ -->
+  <div class="pane scrollable" id="pane-comparar">
+    <div class="section-label">Visão geral de valores</div>
+    <div style="overflow-x:auto">
+      <table class="compare-table" id="compare-table">
+        <thead>
+          <tr>
+            <th>Categoria</th>
+            <th>Fornecedor</th>
+            <th>Valor</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="compare-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════ PANE: EXPORTAR ══════════ -->
+  <div class="pane scrollable" id="pane-exportar">
+    <div class="section-label">Nome da exportação</div>
+    <input type="text" id="export-name" placeholder="Ex: Orçamento Final v1" style="margin-bottom:12px"/>
+
+    <div class="export-option">
+      <h3>📋 Nova Aba — Resumo</h3>
+      <p>Cria uma nova aba na planilha com os fornecedores selecionados, valores e total.</p>
+      <button class="btn btn-primary" id="btn-export-sheet" style="margin-top:10px">Exportar para Nova Aba</button>
+    </div>
+
+    <div class="export-option">
+      <h3>✅ Marcar Vencedores</h3>
+      <p>Aplica uma marcação visual (cor) nas linhas dos fornecedores selecionados como vencedores na aba RESUMO.</p>
+      <button class="btn btn-secondary" id="btn-mark-winners">Destacar Vencedores</button>
+    </div>
+
+    <div class="export-option">
+      <h3>🔄 Limpar Seleções</h3>
+      <p>Remove todas as seleções de vencedores feitas nesta sessão.</p>
+      <button class="btn btn-danger" id="btn-clear">Limpar Tudo</button>
+    </div>
+  </div>
+
+  <!-- TOTAL BAR -->
+  <div class="total-bar">
+    <span class="label">Total Selecionado</span>
+    <span class="value" id="total-value">R$ 0</span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let sheetData = [];      // { row, category, supplier, value, status, obs }
+let selected  = {};      // { category: rowIndex }
+let categories = [];     // unique category names
+
+// ════════════════════════════════════════════
+// OFFICE INIT
+// ════════════════════════════════════════════
+Office.onReady(async (info) => {
+  if (info.host === Office.HostType.Excel) {
+    await loadSheet();
+  } else {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    // Demo mode for testing outside Excel
+    loadDemoData();
+  }
+});
+
+// ════════════════════════════════════════════
+// LOAD DATA FROM EXCEL
+// ════════════════════════════════════════════
+async function loadSheet() {
+  try {
+    await Excel.run(async (ctx) => {
+      // Try to get "RESUMO" sheet, fallback to active
+      let sheet;
+      try {
+        sheet = ctx.workbook.worksheets.getItem('RESUMO');
+      } catch(e) {
+        sheet = ctx.workbook.worksheets.getActiveWorksheet();
+      }
+
+      sheet.load('name');
+      const range = sheet.getUsedRange();
+      range.load('values,rowCount,columnCount');
+      await ctx.sync();
+
+      document.getElementById('obra-nome').textContent = sheet.name;
+
+      const vals = range.values;
+      sheetData = [];
+
+      // Detect header row — skip rows until we find data rows
+      // Structure from screenshot: col B=category, C=supplier, D=value(?), col G/H=value, I=status, J=obs
+      // We'll scan all rows and pick those that look like supplier rows
+      for (let r = 0; r < vals.length; r++) {
+        const row = vals[r];
+        // Look for rows that have a supplier name (col index ~2 or 3) and a status keyword
+        const rowStr = row.join('|').toUpperCase();
+        const hasStatus = rowStr.includes('RECEBIDO') || rowStr.includes('AGUARDANDO') || rowStr.includes('NÃO SOLICITADO') || rowStr.includes('NAO SOLICITADO');
+        if (!hasStatus) continue;
+
+        // Find the status cell
+        let statusVal = '', supplierVal = '', categoryVal = '', valueVal = '', obsVal = '';
+        for (let c = 0; c < row.length; c++) {
+          const cell = String(row[c]).trim().toUpperCase();
+          if (cell === 'RECEBIDO' || cell.includes('AGUARDANDO') || cell.includes('NÃO SOLICITADO') || cell.includes('NAO SOLICITADO')) {
+            statusVal = String(row[c]).trim();
+          }
+        }
+
+        // Try to find monetary value in the row
+        for (let c = 0; c < row.length; c++) {
+          const v = row[c];
+          if (typeof v === 'number' && v > 0) { valueVal = v; break; }
+          if (typeof v === 'string' && v.includes('R$')) { valueVal = v; break; }
+        }
+
+        // Supplier name — typically a non-empty string cell that isn't a status/value
+        for (let c = 1; c < row.length; c++) {
+          const v = String(row[c]).trim();
+          if (v && v.length > 1 && v.toUpperCase() !== statusVal.toUpperCase()
+            && !v.includes('R$') && isNaN(v) && !v.toUpperCase().includes('RECEBIDO')
+            && !v.toUpperCase().includes('AGUARDANDO') && !v.toUpperCase().includes('SOLICITADO')
+            && !v.toUpperCase().includes('OBSERV') && !v.toUpperCase().includes('VALOR')
+            && !v.toUpperCase().includes('ANTIGO')) {
+            supplierVal = v;
+            break;
+          }
+        }
+
+        // Category — look backwards from this row for a filled category cell
+        categoryVal = findCategory(vals, r);
+
+        // Obs — usually the last non-empty cell
+        for (let c = row.length - 1; c >= 0; c--) {
+          const v = String(row[c]).trim();
+          if (v && v !== statusVal && v !== supplierVal && v !== String(valueVal)) {
+            obsVal = v; break;
+          }
+        }
+
+        if (supplierVal) {
+          sheetData.push({
+            row: r,
+            category: categoryVal || 'OUTROS',
+            supplier: supplierVal,
+            value: parseValue(valueVal),
+            rawValue: valueVal,
+            status: statusVal,
+            obs: obsVal
+          });
+        }
+      }
+
+      buildUI();
+    });
+  } catch(err) {
+    console.error(err);
+    loadDemoData();
+  }
+}
+
+function findCategory(vals, fromRow) {
+  // Look in prior rows for a cell that looks like a category label
+  for (let r = fromRow; r >= 0; r--) {
+    const row = vals[r];
+    for (let c = 0; c < Math.min(row.length, 4); c++) {
+      const v = String(row[c]).trim().toUpperCase();
+      if (v.length > 3 && !v.includes('R$') && !v.includes('RECEBIDO')
+        && !v.includes('AGUARDANDO') && !v.includes('SOLICITADO')
+        && !v.includes('VALOR') && !v.includes('ANTIGO')
+        && !v.includes('OBSERV') && !v.includes('RESUMO')
+        && !v.includes('TOTAL') && isNaN(v)) {
+        return String(row[c]).trim();
+      }
+    }
+  }
+  return 'OUTROS';
+}
+
+function parseValue(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const n = parseFloat(v.replace(/[R$\.\s]/g,'').replace(',','.'));
+    return isNaN(n) ? 0 : n;
+  }
+  return 0;
+}
+
+// ════════════════════════════════════════════
+// DEMO DATA (fallback)
+// ════════════════════════════════════════════
+function loadDemoData() {
+  sheetData = [
+    { row:3,  category:'OBRA CIVIL PISCINA', supplier:'RAFAEL PISCINAS', value:222697.26, rawValue:'R$ 222.697,26', status:'RECEBIDO', obs:'Sem bomba de aquecimento' },
+    { row:4,  category:'OBRA CIVIL PISCINA', supplier:'PROLAZER',         value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO', obs:'' },
+    { row:5,  category:'OBRA CIVIL',         supplier:'RCS',              value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
+    { row:6,  category:'PAISAGISMO',         supplier:'ECO PAISAGISMO',   value:0,         rawValue:'',              status:'NÃO SOLICITADO', obs:'' },
+    { row:7,  category:'PAISAGISMO',         supplier:'KERBER',           value:0,         rawValue:'',              status:'NÃO SOLICITADO', obs:'' },
+    { row:9,  category:'PERGOLADO',          supplier:'UNIFLEX',          value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO', obs:'Manual. Somente toldo' },
+    { row:10, category:'PERGOLADO',          supplier:'UNIFLEX',          value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO', obs:'Motorizado. Somente toldo' },
+    { row:11, category:'PERGOLADO',          supplier:'UNIFLEX',          value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO', obs:'Motorizado. Com estrutura' },
+    { row:12, category:'PERGOLADO',          supplier:'TOLDELLI',         value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
+    { row:14, category:'MOBILIÁRIO EXTERNO', supplier:'ELEVATO CASA',     value:0,         rawValue:'',              status:'RECEBIDO', obs:'' },
+    { row:15, category:'MOBILIÁRIO EXTERNO', supplier:'BRETON',           value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
+  ];
+  buildUI();
+}
+
+// ════════════════════════════════════════════
+// BUILD UI
+// ════════════════════════════════════════════
+function buildUI() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Group by category
+  const grouped = {};
+  for (const item of sheetData) {
+    if (!grouped[item.category]) grouped[item.category] = [];
+    grouped[item.category].push(item);
+  }
+  categories = Object.keys(grouped);
+
+  // ── SELECIONAR PANE ──
+  const list = document.getElementById('supplier-list');
+  list.innerHTML = '';
+
+  for (const cat of categories) {
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.style.marginTop = '12px';
+    label.textContent = cat;
+    list.appendChild(label);
+
+    for (const item of grouped[cat]) {
+      const row = document.createElement('div');
+      row.className = 'supplier-row';
+      row.dataset.row = item.row;
+      row.dataset.cat = item.category;
+
+      const statusBadge = statusClass(item.status);
+      const valueStr = item.value > 0 ? fmtBRL(item.value) : '—';
+
+      row.innerHTML = `
+        <div class="check"></div>
+        <div class="supplier-info">
+          <div class="supplier-name">${item.supplier}</div>
+          ${item.obs ? `<div class="card-sub">${item.obs}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="supplier-value">${valueStr}</div>
+          <span class="badge ${statusBadge}">${shortStatus(item.status)}</span>
+        </div>
+      `;
+
+      row.addEventListener('click', () => toggleSelect(item, row));
+      list.appendChild(row);
+    }
+  }
+
+  // ── COMPARE PANE ──
+  buildCompareTable();
+  updateTotal();
+}
+
+function buildCompareTable() {
+  const tbody = document.getElementById('compare-body');
+  tbody.innerHTML = '';
+
+  // Find min value per category
+  const minBycat = {};
+  for (const item of sheetData) {
+    if (item.value > 0) {
+      if (!minBycat[item.category] || item.value < minBycat[item.category])
+        minBycat[item.category] = item.value;
+    }
+  }
+
+  let prevCat = '';
+  for (const item of sheetData) {
+    const tr = document.createElement('tr');
+    const isBest = item.value > 0 && item.value === minBycat[item.category];
+    tr.innerHTML = `
+      <td style="color:var(--muted);font-size:9px">${item.category !== prevCat ? item.category : ''}</td>
+      <td style="font-weight:500">${item.supplier}</td>
+      <td class="${isBest ? 'best-value' : ''}">${item.value > 0 ? fmtBRL(item.value) : '—'}</td>
+      <td><span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span></td>
+    `;
+    tbody.appendChild(tr);
+    prevCat = item.category;
+  }
+}
+
+// ════════════════════════════════════════════
+// SELECT LOGIC
+// ════════════════════════════════════════════
+function toggleSelect(item, rowEl) {
+  const cat = item.category;
+  if (selected[cat] === item.row) {
+    // Deselect
+    delete selected[cat];
+    rowEl.classList.remove('selected');
+  } else {
+    // Deselect previous in same category
+    document.querySelectorAll(`.supplier-row[data-cat="${CSS.escape(cat)}"]`).forEach(r => r.classList.remove('selected'));
+    selected[cat] = item.row;
+    rowEl.classList.add('selected');
+  }
+  updateTotal();
+}
+
+function updateTotal() {
+  let total = 0;
+  for (const [cat, rowIdx] of Object.entries(selected)) {
+    const item = sheetData.find(i => i.row === rowIdx);
+    if (item) total += item.value;
+  }
+  document.getElementById('total-value').textContent = fmtBRL(total);
+}
+
+// ════════════════════════════════════════════
+// EXPORT: NOVA ABA
+// ════════════════════════════════════════════
+document.getElementById('btn-export-sheet').addEventListener('click', async () => {
+  const name = document.getElementById('export-name').value.trim() || 'Orçamento Exportado';
+  const winners = getWinners();
+  if (winners.length === 0) { toast('Selecione ao menos um fornecedor'); return; }
+
+  try {
+    await Excel.run(async (ctx) => {
+      // Remove sheet if exists
+      try {
+        const existing = ctx.workbook.worksheets.getItem(name);
+        existing.delete();
+        await ctx.sync();
+      } catch(e) {}
+
+      const sheet = ctx.workbook.worksheets.add(name);
+      sheet.activate();
+
+      const rows = [
+        ['CATEGORIA', 'FORNECEDOR SELECIONADO', 'VALOR', 'STATUS', 'OBSERVAÇÕES'],
+        ...winners.map(w => [w.category, w.supplier, w.value || '', w.status, w.obs])
+      ];
+
+      // Total row
+      const totalSelected = winners.reduce((s,w) => s + (w.value||0), 0);
+      rows.push(['', 'TOTAL', totalSelected, '', '']);
+
+      const range = sheet.getRangeByIndexes(0, 0, rows.length, 5);
+      range.values = rows;
+
+      // Style header
+      const hdr = sheet.getRangeByIndexes(0, 0, 1, 5);
+      hdr.format.fill.color = '#0f1117';
+      hdr.format.font.color = '#c8f060';
+      hdr.format.font.bold = true;
+
+      // Style total row
+      const tot = sheet.getRangeByIndexes(rows.length-1, 0, 1, 5);
+      tot.format.fill.color = '#181c27';
+      tot.format.font.bold = true;
+      tot.format.font.color = '#c8f060';
+
+      // Auto-fit
+      range.format.autofitColumns();
+
+      await ctx.sync();
+      toast(`Aba "${name}" criada!`);
+    });
+  } catch(err) {
+    console.error(err);
+    toast('Erro: ' + err.message);
+  }
+});
+
+// ════════════════════════════════════════════
+// EXPORT: DESTACAR VENCEDORES
+// ════════════════════════════════════════════
+document.getElementById('btn-mark-winners').addEventListener('click', async () => {
+  const winners = getWinners();
+  if (winners.length === 0) { toast('Selecione ao menos um fornecedor'); return; }
+
+  try {
+    await Excel.run(async (ctx) => {
+      let sheet;
+      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
+
+      for (const w of winners) {
+        // Highlight the entire row
+        const range = sheet.getRangeByIndexes(w.row, 0, 1, 20);
+        range.format.fill.color = '#1a2e0a';
+        range.format.font.bold = true;
+      }
+      await ctx.sync();
+      toast('Vencedores destacados!');
+    });
+  } catch(err) {
+    console.error(err);
+    toast('Erro: ' + err.message);
+  }
+});
+
+// ════════════════════════════════════════════
+// CLEAR
+// ════════════════════════════════════════════
+document.getElementById('btn-clear').addEventListener('click', async () => {
+  selected = {};
+  document.querySelectorAll('.supplier-row').forEach(r => r.classList.remove('selected'));
+  updateTotal();
+
+  try {
+    await Excel.run(async (ctx) => {
+      let sheet;
+      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
+      const range = sheet.getUsedRange();
+      range.format.fill.clear();
+      range.format.font.bold = false;
+      await ctx.sync();
+    });
+  } catch(e) {}
+
+  toast('Seleções limpas');
+});
+
+// ════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════
+function getWinners() {
+  return Object.entries(selected).map(([cat, rowIdx]) => {
+    return sheetData.find(i => i.row === rowIdx);
+  }).filter(Boolean);
+}
+
+function fmtBRL(v) {
+  return new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(v);
+}
+
+function statusClass(s) {
+  if (!s) return 'badge-muted';
+  const u = s.toUpperCase();
+  if (u.includes('RECEBIDO')) return 'badge-green';
+  if (u.includes('AGUARDANDO')) return 'badge-yellow';
+  if (u.includes('NÃO') || u.includes('NAO')) return 'badge-muted';
+  return 'badge-muted';
+}
+
+function shortStatus(s) {
+  if (!s) return '—';
+  const u = s.toUpperCase();
+  if (u.includes('RECEBIDO')) return 'Recebido';
+  if (u.includes('AGUARDANDO')) return 'Aguardando';
+  if (u.includes('NÃO') || u.includes('NAO')) return 'Não Solic.';
+  return s;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('pane-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'comparar') buildCompareTable();
+  });
+});
+</script>
+</body>
+</html>
