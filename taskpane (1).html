@@ -405,93 +405,85 @@ async function loadSheet() {
       const vals = range.values;
       sheetData = [];
 
-      // Detect header row — skip rows until we find data rows
-      // Structure from screenshot: col B=category, C=supplier, D=value(?), col G/H=value, I=status, J=obs
-      // We'll scan all rows and pick those that look like supplier rows
+      // ── MAPEAMENTO FIXO DE COLUNAS (base 0) ──
+      // Coluna B = índice 1 → Categoria
+      // Coluna C = índice 2 → Fornecedor
+      // Coluna F = índice 5 → Valor
+      // Coluna H = índice 7 → Status
+      // Coluna J = índice 9 → Observações
+      const COL_CAT      = 1;
+      const COL_SUPPLIER = 2;
+      const COL_VALUE    = 5;
+      const COL_STATUS   = 7;
+      const COL_OBS      = 9;
+
+      const SKIP_WORDS = ['VALOR', 'ANTIGO', 'OBSERV', 'STATUS', 'RESUMO', 'TOTAL',
+                          'CATEGORIA', 'FORNECEDOR', 'COLISEU', 'RECEBIDO',
+                          'AGUARDANDO', 'SOLICITADO'];
+
+      let lastCategory = '';
+
       for (let r = 0; r < vals.length; r++) {
         const row = vals[r];
-        // Look for rows that have a supplier name (col index ~2 or 3) and a status keyword
-        const rowStr = row.join('|').toUpperCase();
-        const hasStatus = rowStr.includes('RECEBIDO') || rowStr.includes('AGUARDANDO') || rowStr.includes('NÃO SOLICITADO') || rowStr.includes('NAO SOLICITADO');
+
+        const rawStatus   = row.length > COL_STATUS   ? String(row[COL_STATUS]).trim()   : '';
+        const rawSupplier = row.length > COL_SUPPLIER  ? String(row[COL_SUPPLIER]).trim()  : '';
+        const rawCat      = row.length > COL_CAT       ? String(row[COL_CAT]).trim()       : '';
+        const rawValue    = row.length > COL_VALUE     ? row[COL_VALUE]                    : '';
+        const rawObs      = row.length > COL_OBS       ? String(row[COL_OBS]).trim()       : '';
+
+        const statusUp = rawStatus.toUpperCase();
+        const hasStatus = statusUp.includes('RECEBIDO') ||
+                          statusUp.includes('AGUARDANDO') ||
+                          statusUp.includes('NÃO SOLICITADO') ||
+                          statusUp.includes('NAO SOLICITADO');
+
+        // Atualiza categoria corrente quando a célula B muda
+        if (rawCat && rawCat.length > 2 &&
+            !SKIP_WORDS.some(w => rawCat.toUpperCase().includes(w))) {
+          lastCategory = rawCat;
+        }
+
         if (!hasStatus) continue;
+        if (!rawSupplier || rawSupplier.length < 2) continue;
 
-        // Find the status cell
-        let statusVal = '', supplierVal = '', categoryVal = '', valueVal = '', obsVal = '';
-        for (let c = 0; c < row.length; c++) {
-          const cell = String(row[c]).trim().toUpperCase();
-          if (cell === 'RECEBIDO' || cell.includes('AGUARDANDO') || cell.includes('NÃO SOLICITADO') || cell.includes('NAO SOLICITADO')) {
-            statusVal = String(row[c]).trim();
-          }
-        }
+        sheetData.push({
+          row: r,
+          category: lastCategory || 'OUTROS',
+          supplier: rawSupplier,
+          value: parseValue(rawValue),
+          rawValue: rawValue,
+          status: rawStatus,
+          obs: rawObs
+        });
+      }
 
-        // Try to find monetary value in the row
-        for (let c = 0; c < row.length; c++) {
-          const v = row[c];
-          if (typeof v === 'number' && v > 0) { valueVal = v; break; }
-          if (typeof v === 'string' && v.includes('R$')) { valueVal = v; break; }
-        }
-
-        // Supplier name — typically a non-empty string cell that isn't a status/value
-        for (let c = 1; c < row.length; c++) {
-          const v = String(row[c]).trim();
-          if (v && v.length > 1 && v.toUpperCase() !== statusVal.toUpperCase()
-            && !v.includes('R$') && isNaN(v) && !v.toUpperCase().includes('RECEBIDO')
-            && !v.toUpperCase().includes('AGUARDANDO') && !v.toUpperCase().includes('SOLICITADO')
-            && !v.toUpperCase().includes('OBSERV') && !v.toUpperCase().includes('VALOR')
-            && !v.toUpperCase().includes('ANTIGO')) {
-            supplierVal = v;
-            break;
-          }
-        }
-
-        // Category — look backwards from this row for a filled category cell
-        categoryVal = findCategory(vals, r);
-
-        // Obs — usually the last non-empty cell
-        for (let c = row.length - 1; c >= 0; c--) {
-          const v = String(row[c]).trim();
-          if (v && v !== statusVal && v !== supplierVal && v !== String(valueVal)) {
-            obsVal = v; break;
-          }
-        }
-
-        if (supplierVal) {
-          sheetData.push({
-            row: r,
-            category: categoryVal || 'OUTROS',
-            supplier: supplierVal,
-            value: parseValue(valueVal),
-            rawValue: valueVal,
-            status: statusVal,
-            obs: obsVal
-          });
-        }
+      if (sheetData.length === 0) {
+        throw new Error('Nenhuma linha com status encontrada. Verifique se a aba se chama RESUMO e se as colunas B=Categoria, C=Fornecedor, F=Valor, H=Status, J=Obs estão corretas.');
       }
 
       buildUI();
     });
   } catch(err) {
     console.error(err);
-    loadDemoData();
+    showError(err.message);
   }
 }
 
-function findCategory(vals, fromRow) {
-  // Look in prior rows for a cell that looks like a category label
-  for (let r = fromRow; r >= 0; r--) {
-    const row = vals[r];
-    for (let c = 0; c < Math.min(row.length, 4); c++) {
-      const v = String(row[c]).trim().toUpperCase();
-      if (v.length > 3 && !v.includes('R$') && !v.includes('RECEBIDO')
-        && !v.includes('AGUARDANDO') && !v.includes('SOLICITADO')
-        && !v.includes('VALOR') && !v.includes('ANTIGO')
-        && !v.includes('OBSERV') && !v.includes('RESUMO')
-        && !v.includes('TOTAL') && isNaN(v)) {
-        return String(row[c]).trim();
-      }
-    }
-  }
-  return 'OUTROS';
+function showError(msg) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const list = document.getElementById('supplier-list');
+  list.innerHTML = `
+    <div style="text-align:center;padding:30px 16px">
+      <div style="font-size:28px;margin-bottom:12px">⚠️</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--warn);font-size:13px;margin-bottom:8px">Formato não reconhecido</div>
+      <div style="color:var(--muted);font-size:10px;line-height:1.6">${msg || 'A aba RESUMO não segue o padrão esperado de orçamento.'}</div>
+      <div style="color:var(--muted);font-size:10px;margin-top:10px">Verifique se as colunas<br>B=Categoria, C=Fornecedor,<br>F=Valor, H=Status, J=Obs<br>estão corretas.</div>
+      <button class="btn btn-secondary" style="margin-top:16px" onclick="location.reload()">↺ Tentar novamente</button>
+    </div>
+  `;
+  document.getElementById('total-value').textContent = 'R$ 0';
 }
 
 function parseValue(v) {
