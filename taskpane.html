@@ -261,6 +261,8 @@
     color: var(--warn);
     line-height: 1.7;
     display: none;
+    white-space: pre-wrap;
+    word-break: break-all;
   }
   #diag-panel.visible { display: block; }
   #diag-toggle {
@@ -354,14 +356,18 @@
 
 <script>
 // ════════════════════════════════════════════
-// COLUMN MAP — edite aqui se precisar ajustar
+// COLUMN MAP — detecção automática de colunas
 // ════════════════════════════════════════════
-// Índice base 0: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9
-const COL_CAT      = 1;   // B — Categoria (propaga para baixo)
-const COL_SUPPLIER = 3;   // D — Fornecedor  ← CORRIGIDO (era 2=C)
-const COL_VALUE    = 5;   // F — Valor
-const COL_STATUS   = 7;   // H — Status
-const COL_OBS      = 9;   // J — Observações
+// Estratégia: detecta dinamicamente qual coluna contém cada campo
+// buscando por palavras-chave nos cabeçalhos da planilha.
+// Fallbacks hardcoded caso a detecção automática falhe.
+
+// Fallbacks (índice base 0: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9)
+let COL_CAT      = 1;   // B — Categoria
+let COL_SUPPLIER = 3;   // D — Fornecedor
+let COL_VALUE    = 5;   // F — Valor
+let COL_STATUS   = 7;   // H — Status
+let COL_OBS      = 9;   // J — Observações
 
 // Palavras que indicam que a célula de categoria é um cabeçalho e não categoria real
 const SKIP_CAT_WORDS = ['VALOR', 'ANTIGO', 'OBSERV', 'STATUS', 'RESUMO', 'TOTAL',
@@ -392,6 +398,68 @@ Office.onReady(async (info) => {
 });
 
 // ════════════════════════════════════════════
+// AUTO-DETECT COLUMNS FROM HEADER ROW
+// ════════════════════════════════════════════
+function autoDetectColumns(vals) {
+  // Procura nas primeiras 10 linhas por uma linha que pareça cabeçalho
+  for (let r = 0; r < Math.min(10, vals.length); r++) {
+    const row = vals[r];
+    let catIdx = -1, supIdx = -1, valIdx = -1, stIdx = -1, obsIdx = -1;
+
+    for (let c = 0; c < row.length; c++) {
+      const cell = str(row[c]).toUpperCase();
+      if (!cell) continue;
+      if ((cell.includes('CATEG') || cell.includes('ITEM')) && catIdx < 0) catIdx = c;
+      else if ((cell.includes('FORNEC') || cell.includes('EMPRESA') || cell.includes('SUPPLIER')) && supIdx < 0) supIdx = c;
+      else if ((cell.includes('VALOR') || cell.includes('PREÇO') || cell.includes('PRECO') || cell.includes('VALUE')) && valIdx < 0) valIdx = c;
+      else if ((cell.includes('STATUS') || cell.includes('SITUAÇ') || cell.includes('SITUAC')) && stIdx < 0) stIdx = c;
+      else if ((cell.includes('OBS') || cell.includes('NOTA') || cell.includes('REMARK')) && obsIdx < 0) obsIdx = c;
+    }
+
+    // Considera detectado se encontrou pelo menos Status e Fornecedor
+    if (stIdx >= 0 && supIdx >= 0) {
+      diagLines.push(`🎯 Cabeçalho detectado na linha ${r+1}:`);
+      diagLines.push(`  Cat=${catIdx>=0?catIdx:'?'}(${catIdx>=0?colLetter(catIdx):'?'}) | Forn=${supIdx}(${colLetter(supIdx)}) | Val=${valIdx>=0?valIdx:'?'}(${valIdx>=0?colLetter(valIdx):'?'}) | Status=${stIdx}(${colLetter(stIdx)}) | Obs=${obsIdx>=0?obsIdx:'?'}`);
+
+      if (catIdx >= 0) COL_CAT = catIdx;
+      COL_SUPPLIER = supIdx;
+      if (valIdx >= 0) COL_VALUE = valIdx;
+      COL_STATUS = stIdx;
+      if (obsIdx >= 0) COL_OBS = obsIdx;
+      return true;
+    }
+  }
+  return false;
+}
+
+// ════════════════════════════════════════════
+// FALLBACK: SCAN-BASED STATUS DETECTION
+// Quando o mapeamento por cabeçalho falha,
+// encontra o Status varrendo toda a linha.
+// ════════════════════════════════════════════
+function findStatusInRow(row) {
+  for (let c = 0; c < row.length; c++) {
+    const cell = str(row[c]).toUpperCase();
+    if (STATUS_KEYWORDS.some(k => cell.includes(k))) {
+      return { status: str(row[c]), col: c };
+    }
+  }
+  return null;
+}
+
+function colLetter(idx) {
+  // Converte índice 0-based para letra de coluna (A, B, ..., Z, AA, ...)
+  let s = '';
+  let n = idx + 1;
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+// ════════════════════════════════════════════
 // LOAD DATA FROM EXCEL
 // ════════════════════════════════════════════
 async function loadSheet() {
@@ -415,47 +483,98 @@ async function loadSheet() {
       diagLines  = [];
 
       diagLines.push(`Aba: "${sheet.name}" | Linhas: ${vals.length} | Cols: ${vals[0]?.length}`);
-      diagLines.push(`Mapeamento: B(${COL_CAT}) Cat | D(${COL_SUPPLIER}) Forn | F(${COL_VALUE}) Val | H(${COL_STATUS}) Status | J(${COL_OBS}) Obs`);
-      diagLines.push('─'.repeat(50));
+      diagLines.push('─'.repeat(60));
+
+      // ── Tenta detecção automática de colunas por cabeçalho ──
+      const autoDetected = autoDetectColumns(vals);
+      if (!autoDetected) {
+        diagLines.push('⚠️ Cabeçalho não encontrado — usando fallback de varredura por linha');
+        diagLines.push(`   Fallback: B(${COL_CAT}) Cat | D(${COL_SUPPLIER}) Forn | F(${COL_VALUE}) Val | H(${COL_STATUS}) Status | J(${COL_OBS}) Obs`);
+      }
+
+      diagLines.push('─'.repeat(60));
 
       let lastCategory = '';
       let found = 0;
+      // Rastreia qual coluna de Status foi mais frequente (para fallback)
+      const statusColFreq = {};
 
       for (let r = 0; r < vals.length; r++) {
         const row = vals[r];
         const maxCol = row.length;
 
-        const rawCat      = maxCol > COL_CAT      ? str(row[COL_CAT])      : '';
-        const rawSupplier = maxCol > COL_SUPPLIER  ? str(row[COL_SUPPLIER]) : '';
-        const rawValue    = maxCol > COL_VALUE     ? row[COL_VALUE]         : '';
-        const rawStatus   = maxCol > COL_STATUS    ? str(row[COL_STATUS])   : '';
-        const rawObs      = maxCol > COL_OBS       ? str(row[COL_OBS])      : '';
+        const rawCat = maxCol > COL_CAT ? str(row[COL_CAT]) : '';
 
-        // Atualiza categoria quando célula B muda e não é cabeçalho
+        // Atualiza categoria quando célula mudar e não for cabeçalho/lixo
         if (rawCat.length > 1 && !SKIP_CAT_WORDS.some(w => rawCat.toUpperCase().includes(w))) {
           if (rawCat !== lastCategory) {
             lastCategory = rawCat;
-            diagLines.push(`[L${r+1}] 📁 Cat atualizada → "${lastCategory}"`);
+            diagLines.push(`[L${r+1}] 📁 Cat → "${lastCategory}"`);
           }
         }
 
-        // Verifica se esta linha tem status válido
+        // ── Detecta Status: tenta coluna mapeada primeiro, depois varre toda a linha ──
+        let rawStatus = '';
+        let statusCol = COL_STATUS;
+
+        if (maxCol > COL_STATUS) {
+          rawStatus = str(row[COL_STATUS]);
+        }
+
         const statusUp = rawStatus.toUpperCase();
         const hasStatus = STATUS_KEYWORDS.some(k => statusUp.includes(k));
 
-        if (!hasStatus) continue;
+        if (!hasStatus) {
+          // Fallback: varre toda a linha procurando status
+          const found_st = findStatusInRow(row);
+          if (found_st) {
+            rawStatus = found_st.status;
+            statusCol = found_st.col;
+            statusColFreq[statusCol] = (statusColFreq[statusCol] || 0) + 1;
+            diagLines.push(`[L${r+1}] 🔍 Status encontrado por varredura na col ${colLetter(statusCol)}: "${rawStatus}"`);
+          } else {
+            continue; // Linha sem status válido — pula
+          }
+        }
 
-        // Tenta encontrar fornecedor na coluna D ou fallback em C
-        let supplier = rawSupplier;
+        // ── Detecta Fornecedor: tenta coluna mapeada, depois C, depois varre ──
+        let supplier = maxCol > COL_SUPPLIER ? str(row[COL_SUPPLIER]) : '';
+
         if (!supplier || supplier.length < 2) {
-          // fallback: tenta coluna C (índice 2)
-          supplier = maxCol > 2 ? str(row[2]) : '';
+          // Tenta colunas vizinhas C, D, E (excluindo coluna de status)
+          for (const tryCol of [2, 3, 4, 1]) {
+            if (tryCol === statusCol || tryCol >= maxCol) continue;
+            const candidate = str(row[tryCol]);
+            // Candidato válido: texto com 2+ chars, não numérico puro, não é status
+            if (candidate.length >= 2 &&
+                isNaN(parseFloat(candidate.replace(',','.'))) &&
+                !STATUS_KEYWORDS.some(k => candidate.toUpperCase().includes(k)) &&
+                !SKIP_CAT_WORDS.some(k => candidate.toUpperCase().includes(k))) {
+              supplier = candidate;
+              diagLines.push(`[L${r+1}] 🔍 Fornecedor encontrado por fallback na col ${colLetter(tryCol)}: "${supplier}"`);
+              break;
+            }
+          }
         }
 
         if (!supplier || supplier.length < 2) {
-          diagLines.push(`[L${r+1}] ⚠️ Status "${rawStatus}" mas sem fornecedor (D="${rawSupplier}", C="${maxCol>2?str(row[2]):'?'}")`);
+          diagLines.push(`[L${r+1}] ⚠️ Status "${rawStatus}" mas sem fornecedor identificável`);
           continue;
         }
+
+        // ── Detecta Valor: tenta coluna mapeada, depois varre por número ──
+        let rawValue = maxCol > COL_VALUE ? row[COL_VALUE] : '';
+        if (!rawValue || parseValue(rawValue) === 0) {
+          for (let c = 0; c < maxCol; c++) {
+            if (c === statusCol || c === COL_SUPPLIER || c === COL_CAT) continue;
+            const v = row[c];
+            const pv = parseValue(v);
+            if (pv > 0) { rawValue = v; break; }
+          }
+        }
+
+        // ── Observações ──
+        const rawObs = maxCol > COL_OBS ? str(row[COL_OBS]) : '';
 
         found++;
         diagLines.push(`[L${r+1}] ✅ "${supplier}" | Cat:"${lastCategory||'?'}" | Val:"${rawValue}" | St:"${rawStatus}"`);
@@ -465,22 +584,32 @@ async function loadSheet() {
           category: lastCategory || 'OUTROS',
           supplier,
           value: parseValue(rawValue),
-          rawValue,
+          rawValue: String(rawValue),
           status: rawStatus,
           obs: rawObs
         });
       }
 
-      diagLines.push('─'.repeat(50));
+      diagLines.push('─'.repeat(60));
       diagLines.push(`Total linhas encontradas: ${found}`);
 
+      // Sugere correção se Status foi detectado por varredura em coluna diferente
+      const freqEntries = Object.entries(statusColFreq).sort((a,b) => b[1]-a[1]);
+      if (freqEntries.length > 0) {
+        const [bestCol, count] = freqEntries[0];
+        if (parseInt(bestCol) !== COL_STATUS) {
+          diagLines.push(`💡 Status encontrado ${count}x na col ${colLetter(parseInt(bestCol))} — considere ajustar COL_STATUS para ${bestCol}`);
+        }
+      }
+
       if (sheetData.length === 0) {
-        const sample = vals.slice(0,6).map((r,i)=> `L${i+1}: ${r.slice(0,10).map(c=>String(c).substring(0,12)).join(' | ')}`).join('\n');
+        const sample = vals.slice(0, 8).map((row, i) =>
+          `L${i+1}: ${row.slice(0, 12).map(c => String(c).substring(0, 14)).join(' | ')}`
+        ).join('\n');
         throw new Error(
           `Nenhuma linha com status válido encontrada.\n\nAmostra das primeiras linhas:\n${sample}\n\n` +
-          `Palavras esperadas na coluna H: RECEBIDO, AGUARDANDO, NÃO SOLICITADO.\n` +
-          `Verifique se a aba chama RESUMO e se as colunas B=Categoria, D=Fornecedor, F=Valor, H=Status estão corretas.\n\n` +
-          `Abra o diagnóstico (botão no topo) para ver o log de leitura.`
+          `Palavras esperadas em qualquer coluna: RECEBIDO, AGUARDANDO, NÃO SOLICITADO.\n\n` +
+          `Abra o diagnóstico (botão no topo) para ver o log detalhado.`
         );
       }
 
@@ -518,8 +647,9 @@ function showError(msg) {
 function parseValue(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
-    // Remove R$, pontos de milhar, troca vírgula decimal por ponto
-    const n = parseFloat(v.replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.'));
+    // Remove R$, espaços, pontos de milhar, troca vírgula decimal por ponto
+    const cleaned = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(cleaned);
     return isNaN(n) ? 0 : n;
   }
   return 0;
@@ -530,16 +660,23 @@ function parseValue(v) {
 // ════════════════════════════════════════════
 function loadDemoData() {
   sheetData = [
-    { row:3,  category:'OBRA CIVIL PISCINA', supplier:'RAFAEL PISCINAS', value:222697.26, rawValue:'R$ 222.697,26', status:'RECEBIDO', obs:'Sem bomba de aquecimento' },
-    { row:4,  category:'OBRA CIVIL PISCINA', supplier:'PROLAZER',         value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO', obs:'' },
-    { row:5,  category:'OBRA CIVIL',         supplier:'RCS',              value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
-    { row:6,  category:'PAISAGISMO',         supplier:'ECO PAISAGISMO',   value:0,         rawValue:'',              status:'NÃO SOLICITADO', obs:'' },
-    { row:9,  category:'PERGOLADO',          supplier:'UNIFLEX',          value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO', obs:'Manual. Somente toldo' },
-    { row:10, category:'PERGOLADO',          supplier:'UNIFLEX',          value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO', obs:'Motorizado. Somente toldo' },
-    { row:11, category:'PERGOLADO',          supplier:'UNIFLEX',          value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO', obs:'Motorizado. Com estrutura' },
-    { row:12, category:'PERGOLADO',          supplier:'TOLDELLI',         value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
-    { row:14, category:'MOBILIÁRIO EXTERNO', supplier:'ELEVATO CASA',     value:0,         rawValue:'',              status:'RECEBIDO', obs:'' },
-    { row:15, category:'MOBILIÁRIO EXTERNO', supplier:'BRETON',           value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
+    { row:5,  category:'PISOS E REVESTIMENTOS', supplier:'ELEVATO',        value:0,         rawValue:'',              status:'RECEBIDO',          obs:'' },
+    { row:6,  category:'ILUMINAÇÃO',            supplier:'COMESPE',        value:0,         rawValue:'',              status:'RECEBIDO',          obs:'' },
+    { row:7,  category:'OBRA CIVIL PISCINA',    supplier:'RAFAEL PISCINAS',value:222697.26, rawValue:'R$ 222.697,26', status:'RECEBIDO',          obs:'Sem bomba de aquecimento' },
+    { row:8,  category:'OBRA CIVIL PISCINA',    supplier:'PROLAZER',       value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO',          obs:'' },
+    { row:9,  category:'OBRA CIVIL',            supplier:'RCS',            value:0,         rawValue:'',              status:'AGUARDANDO RETORNO',obs:'' },
+    { row:10, category:'PAISAGISMO',            supplier:'ECO PAISAGISMO', value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'' },
+    { row:11, category:'PAISAGISMO',            supplier:'KERBER',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'' },
+    { row:12, category:'PEDRAS PASSEIO',        supplier:'—',              value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'' },
+    { row:13, category:'PERGOLADO',             supplier:'UNIFLEX',        value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO',          obs:'Manual. Somente toldo' },
+    { row:14, category:'PERGOLADO',             supplier:'UNIFLEX',        value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO',          obs:'Motorizado. Somente toldo' },
+    { row:15, category:'PERGOLADO',             supplier:'UNIFLEX',        value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO',          obs:'Motorizado. Com estrutura' },
+    { row:16, category:'PERGOLADO',             supplier:'TOLDELLI',       value:0,         rawValue:'',              status:'AGUARDANDO RETORNO',obs:'' },
+    { row:17, category:'SAUNA',                 supplier:'MÔNACO',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'2,00 x 1,50m' },
+    { row:18, category:'SAUNA',                 supplier:'MÔNACO',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'1,50 x 1,50m' },
+    { row:19, category:'SAUNA',                 supplier:'MÔNACO',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'1,30 x 1,00m' },
+    { row:20, category:'MOBILIÁRIO EXTERNO',    supplier:'ELEVATO CASA',   value:0,         rawValue:'',              status:'RECEBIDO',          obs:'' },
+    { row:21, category:'MOBILIÁRIO EXTERNO',    supplier:'BRETON',         value:0,         rawValue:'',              status:'AGUARDANDO RETORNO',obs:'' },
   ];
   buildUI();
 }
@@ -579,15 +716,16 @@ function buildUI() {
       const row = document.createElement('div');
       row.className = 'supplier-row';
       row.dataset.row = item.row;
-      row.dataset.cat = CSS.escape(item.category);
+      // Usando data-cat como string simples (sem CSS.escape para evitar bugs de comparação)
+      row.dataset.cat = item.category;
 
       const valueStr = item.value > 0 ? fmtBRL(item.value) : '—';
 
       row.innerHTML = `
         <div class="check"></div>
         <div class="supplier-info">
-          <div class="supplier-name">${item.supplier}</div>
-          ${item.obs ? `<div style="color:var(--muted);font-size:9px;margin-top:2px">${item.obs}</div>` : ''}
+          <div class="supplier-name">${escHtml(item.supplier)}</div>
+          ${item.obs ? `<div style="color:var(--muted);font-size:9px;margin-top:2px">${escHtml(item.obs)}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div class="supplier-value">${valueStr}</div>
@@ -621,8 +759,8 @@ function buildCompareTable() {
     const tr = document.createElement('tr');
     const isBest = item.value > 0 && item.value === minByCat[item.category];
     tr.innerHTML = `
-      <td style="color:var(--muted);font-size:9px">${item.category !== prevCat ? item.category : ''}</td>
-      <td style="font-weight:500">${item.supplier}</td>
+      <td style="color:var(--muted);font-size:9px">${item.category !== prevCat ? escHtml(item.category) : ''}</td>
+      <td style="font-weight:500">${escHtml(item.supplier)}</td>
       <td class="${isBest ? 'best-value' : ''}">${item.value > 0 ? fmtBRL(item.value) : '—'}</td>
       <td><span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span></td>
     `;
@@ -642,7 +780,7 @@ function toggleSelect(item, rowEl) {
   } else {
     // Desmarca anterior da mesma categoria
     document.querySelectorAll('.supplier-row').forEach(r => {
-      if (r.dataset.cat === CSS.escape(cat)) r.classList.remove('selected');
+      if (r.dataset.cat === cat) r.classList.remove('selected');
     });
     selected[cat] = item.row;
     rowEl.classList.add('selected');
@@ -778,6 +916,14 @@ function shortStatus(s) {
   if (u.includes('AGUARDANDO')) return 'Aguardando';
   if (u.includes('NÃO') || u.includes('NAO')) return 'Não Solic.';
   return s;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
 
 function toast(msg) {
