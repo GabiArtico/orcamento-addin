@@ -34,7 +34,6 @@
     min-height: 100vh;
   }
 
-  /* ── HEADER ── */
   header {
     padding: 16px 14px 12px;
     border-bottom: 1px solid var(--border);
@@ -50,7 +49,6 @@
   }
   header p { color: var(--muted); font-size: 10px; margin-top: 4px; }
 
-  /* ── TABS ── */
   .tabs {
     display: flex;
     border-bottom: 1px solid var(--border);
@@ -72,11 +70,9 @@
   }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-  /* ── CONTENT ── */
   .pane { display: none; padding: 12px 14px; }
   .pane.active { display: block; }
 
-  /* ── SECTION LABEL ── */
   .section-label {
     font-family: 'Syne', sans-serif;
     font-size: 9px;
@@ -88,7 +84,6 @@
   }
   .section-label:first-child { margin-top: 0; }
 
-  /* ── BTN ── */
   .btn {
     display: block;
     width: 100%;
@@ -111,7 +106,6 @@
   .btn-danger:hover { background: var(--danger); color: #fff; }
   .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
-  /* ── CARD ── */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -119,15 +113,7 @@
     padding: 10px 12px;
     margin-bottom: 6px;
   }
-  .card-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 11px;
-    color: var(--text);
-  }
-  .card-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
 
-  /* ── STATUS BADGE ── */
   .badge {
     display: inline-block;
     padding: 2px 7px;
@@ -142,7 +128,6 @@
   .badge-red    { background: rgba(240,96,96,.15);  color: var(--danger); border: 1px solid rgba(240,96,96,.3);  }
   .badge-muted  { background: rgba(107,114,128,.15);color: var(--muted);  border: 1px solid rgba(107,114,128,.3); }
 
-  /* ── ROW SUPPLIER ── */
   .supplier-row {
     display: flex;
     align-items: center;
@@ -164,21 +149,12 @@
     display: flex; align-items: center; justify-content: center;
     transition: all .15s;
   }
-  .supplier-row.selected .check {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-  .supplier-row.selected .check::after {
-    content: '✓';
-    font-size: 9px;
-    color: #0f1117;
-    font-weight: 700;
-  }
+  .supplier-row.selected .check { background: var(--accent); border-color: var(--accent); }
+  .supplier-row.selected .check::after { content: '✓'; font-size: 9px; color: #0f1117; font-weight: 700; }
   .supplier-info { flex: 1; }
   .supplier-name { font-size: 11px; font-weight: 500; }
   .supplier-value { font-size: 12px; font-weight: 500; color: var(--accent2); }
 
-  /* ── COMPARE TABLE ── */
   .compare-table { width: 100%; border-collapse: collapse; font-size: 10px; }
   .compare-table th {
     text-align: left;
@@ -195,7 +171,6 @@
   .compare-table tr:hover td { background: rgba(200,240,96,.03); }
   .best-value { color: var(--accent); font-weight: 500; }
 
-  /* ── TOTAL BAR ── */
   .total-bar {
     position: sticky;
     bottom: 0;
@@ -209,7 +184,6 @@
   .total-bar .label { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
   .total-bar .value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--accent); }
 
-  /* ── TOAST ── */
   #toast {
     position: fixed;
     bottom: 60px;
@@ -230,7 +204,6 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ── LOADING ── */
   #loading {
     position: fixed; inset: 0;
     background: var(--bg);
@@ -251,11 +224,8 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   #loading p { color: var(--muted); font-size: 11px; }
 
-  /* ── EMPTY STATE ── */
   .empty { text-align: center; padding: 24px 0; color: var(--muted); }
-  .empty .icon { font-size: 28px; margin-bottom: 8px; }
 
-  /* ── EXPORT SECTION ── */
   .export-option {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -280,6 +250,28 @@
   }
   input[type="text"]:focus { border-color: var(--accent); }
 
+  /* Diagnostic panel */
+  #diag-panel {
+    background: #0a0e14;
+    border: 1px solid var(--warn);
+    border-radius: var(--radius);
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 9px;
+    color: var(--warn);
+    line-height: 1.7;
+    display: none;
+  }
+  #diag-panel.visible { display: block; }
+  #diag-toggle {
+    font-size: 9px;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: underline;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+
   .scrollable { overflow-y: auto; max-height: calc(100vh - 180px); padding-bottom: 60px; }
 </style>
 </head>
@@ -302,13 +294,15 @@
     <div class="tab" data-tab="exportar">Exportar</div>
   </div>
 
-  <!-- ══════════ PANE: SELECIONAR ══════════ -->
+  <!-- PANE: SELECIONAR -->
   <div class="pane active scrollable" id="pane-selecionar">
+    <span id="diag-toggle" onclick="toggleDiag()">🔍 diagnóstico</span>
+    <div id="diag-panel"></div>
     <div class="section-label">Categorias e Fornecedores</div>
     <div id="supplier-list"></div>
   </div>
 
-  <!-- ══════════ PANE: COMPARAR ══════════ -->
+  <!-- PANE: COMPARAR -->
   <div class="pane scrollable" id="pane-comparar">
     <div class="section-label">Visão geral de valores</div>
     <div style="overflow-x:auto">
@@ -326,7 +320,7 @@
     </div>
   </div>
 
-  <!-- ══════════ PANE: EXPORTAR ══════════ -->
+  <!-- PANE: EXPORTAR -->
   <div class="pane scrollable" id="pane-exportar">
     <div class="section-label">Nome da exportação</div>
     <input type="text" id="export-name" placeholder="Ex: Orçamento Final v1" style="margin-bottom:12px"/>
@@ -350,7 +344,6 @@
     </div>
   </div>
 
-  <!-- TOTAL BAR -->
   <div class="total-bar">
     <span class="label">Total Selecionado</span>
     <span class="value" id="total-value">R$ 0</span>
@@ -361,11 +354,29 @@
 
 <script>
 // ════════════════════════════════════════════
+// COLUMN MAP — edite aqui se precisar ajustar
+// ════════════════════════════════════════════
+// Índice base 0: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9
+const COL_CAT      = 1;   // B — Categoria (propaga para baixo)
+const COL_SUPPLIER = 3;   // D — Fornecedor  ← CORRIGIDO (era 2=C)
+const COL_VALUE    = 5;   // F — Valor
+const COL_STATUS   = 7;   // H — Status
+const COL_OBS      = 9;   // J — Observações
+
+// Palavras que indicam que a célula de categoria é um cabeçalho e não categoria real
+const SKIP_CAT_WORDS = ['VALOR', 'ANTIGO', 'OBSERV', 'STATUS', 'RESUMO', 'TOTAL',
+                        'CATEGORIA', 'FORNECEDOR', 'COLISEU', 'RECEBIDO',
+                        'AGUARDANDO', 'SOLICITADO', 'DATA'];
+
+// Palavras que identificam uma linha de fornecedor válida pelo campo Status
+const STATUS_KEYWORDS = ['RECEBIDO', 'AGUARDANDO', 'NÃO SOLICITADO', 'NAO SOLICITADO', 'NÃO SOLIC'];
+
+// ════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════
-let sheetData = [];      // { row, category, supplier, value, status, obs }
-let selected  = {};      // { category: rowIndex }
-let categories = [];     // unique category names
+let sheetData  = [];
+let selected   = {};
+let diagLines  = [];
 
 // ════════════════════════════════════════════
 // OFFICE INIT
@@ -376,7 +387,6 @@ Office.onReady(async (info) => {
   } else {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    // Demo mode for testing outside Excel
     loadDemoData();
   }
 });
@@ -387,14 +397,12 @@ Office.onReady(async (info) => {
 async function loadSheet() {
   try {
     await Excel.run(async (ctx) => {
-      // Try to get "RESUMO" sheet, fallback to active
       let sheet;
       try {
         sheet = ctx.workbook.worksheets.getItem('RESUMO');
       } catch(e) {
         sheet = ctx.workbook.worksheets.getActiveWorksheet();
       }
-
       sheet.load('name');
       const range = sheet.getUsedRange();
       range.load('values,rowCount,columnCount');
@@ -403,63 +411,77 @@ async function loadSheet() {
       document.getElementById('obra-nome').textContent = sheet.name;
 
       const vals = range.values;
-      sheetData = [];
+      sheetData  = [];
+      diagLines  = [];
 
-      // ── MAPEAMENTO FIXO DE COLUNAS (base 0) ──
-      // Coluna B = índice 1 → Categoria
-      // Coluna C = índice 2 → Fornecedor
-      // Coluna F = índice 5 → Valor
-      // Coluna H = índice 7 → Status
-      // Coluna J = índice 9 → Observações
-      const COL_CAT      = 1;  // B
-      const COL_SUPPLIER = 3;  // D
-      const COL_VALUE    = 5;  // F
-      const COL_STATUS   = 7;  // H
-      const COL_OBS      = 9;  // J
-
-      const SKIP_WORDS = ['VALOR', 'ANTIGO', 'OBSERV', 'STATUS', 'RESUMO', 'TOTAL',
-                          'CATEGORIA', 'FORNECEDOR', 'COLISEU', 'RECEBIDO',
-                          'AGUARDANDO', 'SOLICITADO'];
+      diagLines.push(`Aba: "${sheet.name}" | Linhas: ${vals.length} | Cols: ${vals[0]?.length}`);
+      diagLines.push(`Mapeamento: B(${COL_CAT}) Cat | D(${COL_SUPPLIER}) Forn | F(${COL_VALUE}) Val | H(${COL_STATUS}) Status | J(${COL_OBS}) Obs`);
+      diagLines.push('─'.repeat(50));
 
       let lastCategory = '';
+      let found = 0;
 
       for (let r = 0; r < vals.length; r++) {
         const row = vals[r];
+        const maxCol = row.length;
 
-        const rawStatus   = row.length > COL_STATUS   ? String(row[COL_STATUS]).trim()   : '';
-        const rawSupplier = row.length > COL_SUPPLIER  ? String(row[COL_SUPPLIER]).trim()  : '';
-        const rawCat      = row.length > COL_CAT       ? String(row[COL_CAT]).trim()       : '';
-        const rawValue    = row.length > COL_VALUE     ? row[COL_VALUE]                    : '';
-        const rawObs      = row.length > COL_OBS       ? String(row[COL_OBS]).trim()       : '';
+        const rawCat      = maxCol > COL_CAT      ? str(row[COL_CAT])      : '';
+        const rawSupplier = maxCol > COL_SUPPLIER  ? str(row[COL_SUPPLIER]) : '';
+        const rawValue    = maxCol > COL_VALUE     ? row[COL_VALUE]         : '';
+        const rawStatus   = maxCol > COL_STATUS    ? str(row[COL_STATUS])   : '';
+        const rawObs      = maxCol > COL_OBS       ? str(row[COL_OBS])      : '';
 
-        const statusUp = rawStatus.toUpperCase();
-        const hasStatus = statusUp.includes('RECEBIDO') ||
-                          statusUp.includes('AGUARDANDO') ||
-                          statusUp.includes('NÃO SOLICITADO') ||
-                          statusUp.includes('NAO SOLICITADO');
-
-        // Atualiza categoria corrente quando a célula B muda
-        if (rawCat && rawCat.length > 2 &&
-            !SKIP_WORDS.some(w => rawCat.toUpperCase().includes(w))) {
-          lastCategory = rawCat;
+        // Atualiza categoria quando célula B muda e não é cabeçalho
+        if (rawCat.length > 1 && !SKIP_CAT_WORDS.some(w => rawCat.toUpperCase().includes(w))) {
+          if (rawCat !== lastCategory) {
+            lastCategory = rawCat;
+            diagLines.push(`[L${r+1}] 📁 Cat atualizada → "${lastCategory}"`);
+          }
         }
 
+        // Verifica se esta linha tem status válido
+        const statusUp = rawStatus.toUpperCase();
+        const hasStatus = STATUS_KEYWORDS.some(k => statusUp.includes(k));
+
         if (!hasStatus) continue;
-        if (!rawSupplier || rawSupplier.length < 2) continue;
+
+        // Tenta encontrar fornecedor na coluna D ou fallback em C
+        let supplier = rawSupplier;
+        if (!supplier || supplier.length < 2) {
+          // fallback: tenta coluna C (índice 2)
+          supplier = maxCol > 2 ? str(row[2]) : '';
+        }
+
+        if (!supplier || supplier.length < 2) {
+          diagLines.push(`[L${r+1}] ⚠️ Status "${rawStatus}" mas sem fornecedor (D="${rawSupplier}", C="${maxCol>2?str(row[2]):'?'}")`);
+          continue;
+        }
+
+        found++;
+        diagLines.push(`[L${r+1}] ✅ "${supplier}" | Cat:"${lastCategory||'?'}" | Val:"${rawValue}" | St:"${rawStatus}"`);
 
         sheetData.push({
           row: r,
           category: lastCategory || 'OUTROS',
-          supplier: rawSupplier,
+          supplier,
           value: parseValue(rawValue),
-          rawValue: rawValue,
+          rawValue,
           status: rawStatus,
           obs: rawObs
         });
       }
 
+      diagLines.push('─'.repeat(50));
+      diagLines.push(`Total linhas encontradas: ${found}`);
+
       if (sheetData.length === 0) {
-        throw new Error('Nenhuma linha com status encontrada. Verifique se a aba se chama RESUMO e se as colunas B=Categoria, C=Fornecedor, F=Valor, H=Status, J=Obs estão corretas.');
+        const sample = vals.slice(0,6).map((r,i)=> `L${i+1}: ${r.slice(0,10).map(c=>String(c).substring(0,12)).join(' | ')}`).join('\n');
+        throw new Error(
+          `Nenhuma linha com status válido encontrada.\n\nAmostra das primeiras linhas:\n${sample}\n\n` +
+          `Palavras esperadas na coluna H: RECEBIDO, AGUARDANDO, NÃO SOLICITADO.\n` +
+          `Verifique se a aba chama RESUMO e se as colunas B=Categoria, D=Fornecedor, F=Valor, H=Status estão corretas.\n\n` +
+          `Abra o diagnóstico (botão no topo) para ver o log de leitura.`
+        );
       }
 
       buildUI();
@@ -470,33 +492,41 @@ async function loadSheet() {
   }
 }
 
+function str(v) {
+  return v === null || v === undefined ? '' : String(v).trim();
+}
+
 function showError(msg) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  const list = document.getElementById('supplier-list');
-  list.innerHTML = `
+  document.getElementById('supplier-list').innerHTML = `
     <div style="text-align:center;padding:30px 16px">
       <div style="font-size:28px;margin-bottom:12px">⚠️</div>
       <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--warn);font-size:13px;margin-bottom:8px">Formato não reconhecido</div>
-      <div style="color:var(--muted);font-size:10px;line-height:1.6">${msg || 'A aba RESUMO não segue o padrão esperado de orçamento.'}</div>
-      <div style="color:var(--muted);font-size:10px;margin-top:10px">Verifique se as colunas<br>B=Categoria, C=Fornecedor,<br>F=Valor, H=Status, J=Obs<br>estão corretas.</div>
+      <div style="color:var(--muted);font-size:10px;line-height:1.6;white-space:pre-wrap">${msg}</div>
       <button class="btn btn-secondary" style="margin-top:16px" onclick="location.reload()">↺ Tentar novamente</button>
     </div>
   `;
+  if (diagLines.length > 0) {
+    document.getElementById('diag-panel').textContent = diagLines.join('\n');
+    document.getElementById('diag-panel').classList.add('visible');
+    document.getElementById('diag-toggle').style.display = 'none';
+  }
   document.getElementById('total-value').textContent = 'R$ 0';
 }
 
 function parseValue(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
-    const n = parseFloat(v.replace(/[R$\.\s]/g,'').replace(',','.'));
+    // Remove R$, pontos de milhar, troca vírgula decimal por ponto
+    const n = parseFloat(v.replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.'));
     return isNaN(n) ? 0 : n;
   }
   return 0;
 }
 
 // ════════════════════════════════════════════
-// DEMO DATA (fallback)
+// DEMO DATA
 // ════════════════════════════════════════════
 function loadDemoData() {
   sheetData = [
@@ -504,7 +534,6 @@ function loadDemoData() {
     { row:4,  category:'OBRA CIVIL PISCINA', supplier:'PROLAZER',         value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO', obs:'' },
     { row:5,  category:'OBRA CIVIL',         supplier:'RCS',              value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
     { row:6,  category:'PAISAGISMO',         supplier:'ECO PAISAGISMO',   value:0,         rawValue:'',              status:'NÃO SOLICITADO', obs:'' },
-    { row:7,  category:'PAISAGISMO',         supplier:'KERBER',           value:0,         rawValue:'',              status:'NÃO SOLICITADO', obs:'' },
     { row:9,  category:'PERGOLADO',          supplier:'UNIFLEX',          value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO', obs:'Manual. Somente toldo' },
     { row:10, category:'PERGOLADO',          supplier:'UNIFLEX',          value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO', obs:'Motorizado. Somente toldo' },
     { row:11, category:'PERGOLADO',          supplier:'UNIFLEX',          value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO', obs:'Motorizado. Com estrutura' },
@@ -522,15 +551,20 @@ function buildUI() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
-  // Group by category
+  // Diagnóstico
+  if (diagLines.length > 0) {
+    document.getElementById('diag-panel').textContent = diagLines.join('\n');
+  }
+
+  // Agrupar por categoria
   const grouped = {};
   for (const item of sheetData) {
     if (!grouped[item.category]) grouped[item.category] = [];
     grouped[item.category].push(item);
   }
-  categories = Object.keys(grouped);
+  const categories = Object.keys(grouped);
 
-  // ── SELECIONAR PANE ──
+  // ── Aba Selecionar ──
   const list = document.getElementById('supplier-list');
   list.innerHTML = '';
 
@@ -545,20 +579,19 @@ function buildUI() {
       const row = document.createElement('div');
       row.className = 'supplier-row';
       row.dataset.row = item.row;
-      row.dataset.cat = item.category;
+      row.dataset.cat = CSS.escape(item.category);
 
-      const statusBadge = statusClass(item.status);
       const valueStr = item.value > 0 ? fmtBRL(item.value) : '—';
 
       row.innerHTML = `
         <div class="check"></div>
         <div class="supplier-info">
           <div class="supplier-name">${item.supplier}</div>
-          ${item.obs ? `<div class="card-sub">${item.obs}</div>` : ''}
+          ${item.obs ? `<div style="color:var(--muted);font-size:9px;margin-top:2px">${item.obs}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div class="supplier-value">${valueStr}</div>
-          <span class="badge ${statusBadge}">${shortStatus(item.status)}</span>
+          <span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span>
         </div>
       `;
 
@@ -567,7 +600,6 @@ function buildUI() {
     }
   }
 
-  // ── COMPARE PANE ──
   buildCompareTable();
   updateTotal();
 }
@@ -576,19 +608,18 @@ function buildCompareTable() {
   const tbody = document.getElementById('compare-body');
   tbody.innerHTML = '';
 
-  // Find min value per category
-  const minBycat = {};
+  const minByCat = {};
   for (const item of sheetData) {
     if (item.value > 0) {
-      if (!minBycat[item.category] || item.value < minBycat[item.category])
-        minBycat[item.category] = item.value;
+      if (!minByCat[item.category] || item.value < minByCat[item.category])
+        minByCat[item.category] = item.value;
     }
   }
 
   let prevCat = '';
   for (const item of sheetData) {
     const tr = document.createElement('tr');
-    const isBest = item.value > 0 && item.value === minBycat[item.category];
+    const isBest = item.value > 0 && item.value === minByCat[item.category];
     tr.innerHTML = `
       <td style="color:var(--muted);font-size:9px">${item.category !== prevCat ? item.category : ''}</td>
       <td style="font-weight:500">${item.supplier}</td>
@@ -606,12 +637,13 @@ function buildCompareTable() {
 function toggleSelect(item, rowEl) {
   const cat = item.category;
   if (selected[cat] === item.row) {
-    // Deselect
     delete selected[cat];
     rowEl.classList.remove('selected');
   } else {
-    // Deselect previous in same category
-    document.querySelectorAll(`.supplier-row[data-cat="${CSS.escape(cat)}"]`).forEach(r => r.classList.remove('selected'));
+    // Desmarca anterior da mesma categoria
+    document.querySelectorAll('.supplier-row').forEach(r => {
+      if (r.dataset.cat === CSS.escape(cat)) r.classList.remove('selected');
+    });
     selected[cat] = item.row;
     rowEl.classList.add('selected');
   }
@@ -620,7 +652,7 @@ function toggleSelect(item, rowEl) {
 
 function updateTotal() {
   let total = 0;
-  for (const [cat, rowIdx] of Object.entries(selected)) {
+  for (const [, rowIdx] of Object.entries(selected)) {
     const item = sheetData.find(i => i.row === rowIdx);
     if (item) total += item.value;
   }
@@ -633,52 +665,38 @@ function updateTotal() {
 document.getElementById('btn-export-sheet').addEventListener('click', async () => {
   const name = document.getElementById('export-name').value.trim() || 'Orçamento Exportado';
   const winners = getWinners();
-  if (winners.length === 0) { toast('Selecione ao menos um fornecedor'); return; }
+  if (!winners.length) { toast('Selecione ao menos um fornecedor'); return; }
 
   try {
     await Excel.run(async (ctx) => {
-      // Remove sheet if exists
-      try {
-        const existing = ctx.workbook.worksheets.getItem(name);
-        existing.delete();
-        await ctx.sync();
-      } catch(e) {}
+      try { ctx.workbook.worksheets.getItem(name).delete(); await ctx.sync(); } catch(e) {}
 
       const sheet = ctx.workbook.worksheets.add(name);
       sheet.activate();
 
       const rows = [
         ['CATEGORIA', 'FORNECEDOR SELECIONADO', 'VALOR', 'STATUS', 'OBSERVAÇÕES'],
-        ...winners.map(w => [w.category, w.supplier, w.value || '', w.status, w.obs])
+        ...winners.map(w => [w.category, w.supplier, w.value || '', w.status, w.obs]),
+        ['', 'TOTAL', winners.reduce((s,w) => s+(w.value||0), 0), '', '']
       ];
-
-      // Total row
-      const totalSelected = winners.reduce((s,w) => s + (w.value||0), 0);
-      rows.push(['', 'TOTAL', totalSelected, '', '']);
 
       const range = sheet.getRangeByIndexes(0, 0, rows.length, 5);
       range.values = rows;
 
-      // Style header
-      const hdr = sheet.getRangeByIndexes(0, 0, 1, 5);
-      hdr.format.fill.color = '#0f1117';
-      hdr.format.font.color = '#c8f060';
-      hdr.format.font.bold = true;
+      sheet.getRangeByIndexes(0, 0, 1, 5).format.fill.color = '#0f1117';
+      sheet.getRangeByIndexes(0, 0, 1, 5).format.font.color = '#c8f060';
+      sheet.getRangeByIndexes(0, 0, 1, 5).format.font.bold = true;
 
-      // Style total row
-      const tot = sheet.getRangeByIndexes(rows.length-1, 0, 1, 5);
-      tot.format.fill.color = '#181c27';
-      tot.format.font.bold = true;
-      tot.format.font.color = '#c8f060';
+      const totRow = sheet.getRangeByIndexes(rows.length-1, 0, 1, 5);
+      totRow.format.fill.color = '#181c27';
+      totRow.format.font.bold = true;
+      totRow.format.font.color = '#c8f060';
 
-      // Auto-fit
       range.format.autofitColumns();
-
       await ctx.sync();
       toast(`Aba "${name}" criada!`);
     });
   } catch(err) {
-    console.error(err);
     toast('Erro: ' + err.message);
   }
 });
@@ -688,7 +706,7 @@ document.getElementById('btn-export-sheet').addEventListener('click', async () =
 // ════════════════════════════════════════════
 document.getElementById('btn-mark-winners').addEventListener('click', async () => {
   const winners = getWinners();
-  if (winners.length === 0) { toast('Selecione ao menos um fornecedor'); return; }
+  if (!winners.length) { toast('Selecione ao menos um fornecedor'); return; }
 
   try {
     await Excel.run(async (ctx) => {
@@ -697,7 +715,6 @@ document.getElementById('btn-mark-winners').addEventListener('click', async () =
       catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
 
       for (const w of winners) {
-        // Highlight the entire row
         const range = sheet.getRangeByIndexes(w.row, 0, 1, 20);
         range.format.fill.color = '#1a2e0a';
         range.format.font.bold = true;
@@ -706,7 +723,6 @@ document.getElementById('btn-mark-winners').addEventListener('click', async () =
       toast('Vencedores destacados!');
     });
   } catch(err) {
-    console.error(err);
     toast('Erro: ' + err.message);
   }
 });
@@ -738,9 +754,9 @@ document.getElementById('btn-clear').addEventListener('click', async () => {
 // HELPERS
 // ════════════════════════════════════════════
 function getWinners() {
-  return Object.entries(selected).map(([cat, rowIdx]) => {
-    return sheetData.find(i => i.row === rowIdx);
-  }).filter(Boolean);
+  return Object.entries(selected)
+    .map(([, rowIdx]) => sheetData.find(i => i.row === rowIdx))
+    .filter(Boolean);
 }
 
 function fmtBRL(v) {
@@ -752,7 +768,6 @@ function statusClass(s) {
   const u = s.toUpperCase();
   if (u.includes('RECEBIDO')) return 'badge-green';
   if (u.includes('AGUARDANDO')) return 'badge-yellow';
-  if (u.includes('NÃO') || u.includes('NAO')) return 'badge-muted';
   return 'badge-muted';
 }
 
@@ -770,6 +785,11 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function toggleDiag() {
+  const p = document.getElementById('diag-panel');
+  p.classList.toggle('visible');
 }
 
 // ════════════════════════════════════════════
