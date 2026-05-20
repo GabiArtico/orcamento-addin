@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+
+  <!-- ════════════════════════════════════════════════
+       IDENTIDADE DO ADD-IN
+       Gere um novo GUID em: https://guidgenerator.com
+       ════════════════════════════════════════════════ -->
+  <Id>a1b2c3d4-e5f6-7890-abcd-ef1234567890</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Sua Empresa</ProviderName>
+  <DefaultLocale>pt-BR</DefaultLocale>
+
+  <DisplayName DefaultValue="Orçamento de Obra"/>
+  <Description DefaultValue="Selecione fornecedores, compare valores e exporte orçamentos diretamente da planilha."/>
+
+  <!-- ════════════════════════════════════════════════
+       ÍCONES
+       Substitua pelas URLs reais dos seus ícones
+       ════════════════════════════════════════════════ -->
+  <IconUrl DefaultValue="https://SEU-DOMINIO.com/addin/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://SEU-DOMINIO.com/addin/assets/icon-80.png"/>
+  <SupportUrl DefaultValue="https://SEU-DOMINIO.com"/>
+
+  <AppDomains>
+    <AppDomain>https://SEU-DOMINIO.com</AppDomain>
+  </AppDomains>
+
+  <!-- ════════════════════════════════════════════════
+       HOSTS SUPORTADOS
+       ════════════════════════════════════════════════ -->
+  <Hosts>
+    <Host Name="Workbook"/>
+  </Hosts>
+
+  <!-- ════════════════════════════════════════════════
+       PERMISSÕES
+       ReadWriteDocument: necessário para ler a planilha,
+       editar células e criar abas de exportação.
+       ════════════════════════════════════════════════ -->
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <!-- ════════════════════════════════════════════════
+       REQUISITOS MÍNIMOS DO OFFICE
+       ExcelApi 1.3: necessário para getUsedRange,
+       getCell, worksheets.add, etc.
+       ════════════════════════════════════════════════ -->
+  <Requirements>
+    <Sets DefaultMinVersion="1.3">
+      <Set Name="ExcelApi" MinVersion="1.3"/>
+    </Sets>
+  </Requirements>
+
+  <!-- ════════════════════════════════════════════════
+       URL PADRÃO (fallback para Office 2016)
+       ════════════════════════════════════════════════ -->
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://SEU-DOMINIO.com/addin/taskpane.html"/>
+  </DefaultSettings>
+
+  <!-- ════════════════════════════════════════════════
+       OVERRIDES (Office 365 / versões modernas)
+       Configura o botão na faixa de opções do Excel
+       ════════════════════════════════════════════════ -->
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+
+    <Hosts>
+      <Host xsi:type="Workbook">
+
+        <DesktopFormFactor>
+
+          <!-- URL do taskpane.html -->
+          <FunctionFile resid="Taskpane.Url"/>
+
+          <!-- ── BOTÃO NA ABA "INÍCIO" DA FAIXA DE OPÇÕES ── -->
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="OrcamentoGroup">
+                <Label resid="GroupLabel"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16"/>
+                  <bt:Image size="32" resid="Icon.32x32"/>
+                  <bt:Image size="80" resid="Icon.80x80"/>
+                </Icon>
+
+                <!-- Botão principal: abre o painel lateral -->
+                <Control xsi:type="Button" id="BtnOpenPanel">
+                  <Label resid="BtnOpenPanel.Label"/>
+                  <Supertip>
+                    <Title resid="BtnOpenPanel.Label"/>
+                    <Description resid="BtnOpenPanel.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>OrcamentoTaskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+
+        </DesktopFormFactor>
+
+      </Host>
+    </Hosts>
+
+    <!-- ════════════════════════════════════════════════
+         RECURSOS (strings e URLs referenciados acima)
+         ════════════════════════════════════════════════ -->
+    <Resources>
+
+      <bt:Images>
+        <bt:Image id="Icon.16x16" DefaultValue="https://SEU-DOMINIO.com/addin/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://SEU-DOMINIO.com/addin/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://SEU-DOMINIO.com/addin/assets/icon-80.png"/>
+      </bt:Images>
+
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://SEU-DOMINIO.com/addin/taskpane.html"/>
+      </bt:Urls>
+
+      <bt:ShortStrings>
+        <bt:String id="GroupLabel"        DefaultValue="Orçamento"/>
+        <bt:String id="BtnOpenPanel.Label" DefaultValue="Abrir Painel"/>
+      </bt:ShortStrings>
+
+      <bt:LongStrings>
+        <bt:String id="BtnOpenPanel.Tooltip"
+          DefaultValue="Abre o painel Orçamento de Obra para selecionar fornecedores e exportar resultados."/>
+      </bt:LongStrings>
+
+    </Resources>
+
+  </VersionOverrides>
+
+</OfficeApp>

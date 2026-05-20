@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Orçamento de Obra</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#16140F;--ink2:#4A4840;--ink3:#8A8880;--ink4:#C8C5BE;
+  --surface:#F4F1EA;--card:#FEFCF8;--accent:#1A3820;--accent2:#2D5E40;
+  --accent3:#3D8B5A;--accent-light:#E8F4EC;--accent-xlight:#F2F9F4;
+  --red:#9B2C2C;--red-light:#FDF0F0;--warn:#9B6B1A;--warn-light:#FEF7E8;
+  --border:#E4E0D8;--border2:#D4D0C8;--r:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);display:flex;flex-direction:column}
+button{font-family:inherit;cursor:pointer}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--accent);color:#fff;
+  padding:0 12px;display:flex;align-items:center;gap:8px;
+  height:48px;flex-shrink:0;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 24px rgba(0,0,0,.25);
+}
+.brand{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.brand-icon{width:26px;height:26px;background:rgba(255,255,255,.1);border-radius:7px;display:flex;align-items:center;justify-content:center;border:.5px solid rgba(255,255,255,.15);flex-shrink:0}
+.brand-text{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-sub{font-size:9px;opacity:.45;font-weight:400}
+.save-flash{width:6px;height:6px;border-radius:50%;background:#4ADE80;flex-shrink:0;opacity:0;transition:opacity .3s}
+.save-flash.on{opacity:1}
+.top-btn{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);border:.5px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:600;color:#fff;transition:background .15s;white-space:nowrap;flex-shrink:0}
+.top-btn:hover{background:rgba(255,255,255,.2)}
+.top-btn svg{flex-shrink:0}
+
+/* ── LOADING / ERROR SCREEN ── */
+#loadingScreen{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;flex-direction:column;gap:12px}
+.load-spinner{width:32px;height:32px;border:2.5px solid var(--border);border-top-color:var(--accent3);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:13px;color:var(--ink3)}
+.error-box{background:var(--red-light);border:.5px solid #FECACA;border-radius:10px;padding:16px;max-width:320px;text-align:center}
+.error-box h3{color:var(--red);font-size:13px;font-weight:600;margin-bottom:6px}
+.error-box p{font-size:12px;color:var(--ink3);line-height:1.5;margin-bottom:12px}
+.error-box button{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:600}
+.empty-box{text-align:center;max-width:280px}
+.empty-box h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px}
+.empty-box p{font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:16px}
+.empty-box button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+
+/* ── SEARCH BAR ── */
+.search-wrap{padding:8px 10px;position:relative;flex-shrink:0}
+.search-input{width:100%;background:var(--card);border:.5px solid var(--border);border-radius:7px;padding:7px 28px 7px 30px;font-size:12px;font-family:inherit;color:var(--ink);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--accent3);box-shadow:0 0 0 2px rgba(61,139,90,.1)}
+.search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--ink4);pointer-events:none}
+.search-clear{position:absolute;right:18px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink4);font-size:15px;padding:0 3px;display:none;line-height:1}
+.search-clear.visible{display:block}
+
+/* ── FILTER BAR ── */
+.filter-wrap{padding:0 10px 6px;display:flex;gap:4px;flex-shrink:0}
+.filter-btn{background:var(--card);border:.5px solid var(--border);border-radius:6px;padding:4px 9px;font-size:10px;font-weight:500;color:var(--ink3);transition:all .15s}
+.filter-btn.active,.filter-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── PROGRESS BAR ── */
+#progressWrap{padding:0 10px 6px;display:none}
+.progress-inner{background:var(--card);border:.5px solid var(--border);border-radius:7px;padding:7px 10px;display:flex;align-items:center;gap:8px}
+.prog-bar-track{flex:1;height:5px;background:var(--border);border-radius:10px;overflow:hidden}
+.prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent2));border-radius:10px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.prog-label{font-size:10px;color:var(--ink3);white-space:nowrap}
+.prog-pct{font-size:11px;font-weight:600;color:var(--accent);font-family:'DM Mono',monospace;min-width:32px;text-align:right}
+
+/* ── SCROLL AREA ── */
+#scrollArea{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* ── MAIN CONTENT ── */
+#mainContent{display:none;padding:0 10px 12px}
+.content-hdr{padding:8px 0 6px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.content-hdr h1{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.content-hdr p{font-size:10px;color:var(--ink3)}
+.top-stats{display:flex;gap:4px;align-items:center}
+.stat-badge{font-size:9px;font-weight:600;padding:2px 6px;border-radius:12px;display:flex;align-items:center;gap:3px}
+.sb-green{background:rgba(34,197,94,.15);color:#16A34A}
+.sb-yellow{background:rgba(234,179,8,.15);color:#CA8A04}
+.sb-gray{background:rgba(0,0,0,.06);color:var(--ink3)}
+.stat-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.sd-g{background:#22C55E}.sd-y{background:#EAB308}.sd-gr{background:var(--ink4)}
+
+/* ── CARDS GRID ── */
+.grid{display:flex;flex-direction:column;gap:8px}
+.cat-card{background:var(--card);border:.5px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.cat-card.has-sel{border-color:var(--accent3)}
+.cat-card.search-hidden{display:none}
+.cat-head{padding:8px 10px 6px;border-bottom:.5px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.cat-name{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;line-height:1.3;color:var(--ink)}
+.cat-sub{font-size:10px;color:var(--ink3);margin-top:1px}
+.cat-sel-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap}
+.cat-sel-val.none{font-size:10px;font-family:'DM Sans',sans-serif;font-weight:400;color:var(--ink4)}
+.cat-note-line{font-size:9px;color:var(--warn);padding:4px 10px;background:var(--warn-light);border-bottom:.5px solid var(--border);display:none}
+.cat-note-line.show{display:block}
+.opts-list{padding:2px 0}
+.opt-row{display:flex;align-items:center;padding:0 6px;cursor:pointer;transition:background .1s;position:relative}
+.opt-row:hover{background:#F6F4EF}
+.opt-row.sel{background:var(--accent-xlight)}
+.opt-row.previewing{box-shadow:inset 2px 0 0 var(--accent3)}
+.radio-wrap{padding:7px 6px 7px 2px;flex-shrink:0}
+.radio{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.opt-row.sel .radio{border-color:var(--accent);background:var(--accent)}
+.radio-dot{width:4px;height:4px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+.opt-row.sel .radio-dot{opacity:1}
+.opt-body{flex:1;padding:6px 0;min-width:0}
+.opt-sup{font-size:11px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.opt-row.sel .opt-sup{color:var(--accent2)}
+.opt-status{font-size:9px;color:var(--ink3);margin-top:1px}
+.opt-right{display:flex;align-items:center;gap:4px;padding:6px 0 6px 5px;flex-shrink:0}
+.opt-val{font-size:11px;font-weight:500;font-family:'DM Mono',monospace;color:var(--ink2)}
+.opt-val.no-val{font-size:9px;color:var(--ink4);font-family:'DM Sans',sans-serif;font-weight:400}
+.opt-row.sel .opt-val{color:var(--accent2);font-weight:600}
+.status-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.dot-green{background:#22C55E}.dot-yellow{background:#EAB308}.dot-gray{background:#D1D5DB}
+.edited-dot{width:4px;height:4px;border-radius:50%;background:var(--warn);flex-shrink:0}
+.no-results{text-align:center;padding:32px 16px;color:var(--ink3);font-size:13px}
+
+/* ── SUMMARY BAR ── */
+.sum-bar{
+  background:var(--accent);color:#fff;
+  padding:8px 12px;display:none;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;
+  box-shadow:0 -1px 0 rgba(255,255,255,.06);
+}
+.sum-bar.visible{display:flex}
+.sum-item .s-lbl{font-size:8px;opacity:.5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1px}
+.sum-item .s-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace}
+.sum-sep{width:.5px;background:rgba(255,255,255,.12);height:24px;flex-shrink:0}
+.sum-spacer{flex:1}
+.sum-green{color:#86EFAC}.sum-red{color:#FCA5A5}
+.exp-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:.5px solid rgba(255,255,255,.25);border-radius:6px;padding:6px 11px;font-size:10px;font-weight:600;color:#fff;transition:background .15s}
+.exp-btn:hover{background:rgba(255,255,255,.22)}
+.reset-btn{display:flex;align-items:center;gap:4px;background:transparent;border:.5px solid rgba(255,255,255,.15);border-radius:6px;padding:6px 10px;font-size:10px;color:rgba(255,255,255,.6);transition:background .15s}
+.reset-btn:hover{background:rgba(255,255,255,.08)}
+
+/* ── DETAIL PANEL (full overlay) ── */
+#panel{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:var(--card);z-index:500;
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+}
+#panel.open{transform:translateX(0)}
+.panel-hdr{
+  background:var(--accent);color:#fff;padding:0 12px;
+  display:flex;align-items:center;gap:8px;height:48px;flex-shrink:0;
+}
+.panel-close-btn{background:rgba(255,255,255,.1);border:.5px solid rgba(255,255,255,.2);border-radius:6px;color:#fff;padding:5px 7px;font-size:14px;line-height:1;flex-shrink:0}
+.panel-nav-wrap{display:flex;align-items:center;gap:4px;flex:1}
+.nav-btn{background:rgba(255,255,255,.1);border:.5px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;font-size:12px;line-height:1;transition:background .15s}
+.nav-btn:hover:not(:disabled){background:rgba(255,255,255,.2)}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.nav-info{font-size:10px;opacity:.6;font-family:'DM Mono',monospace;min-width:32px;text-align:center}
+.panel-tabs{display:flex;border-bottom:.5px solid var(--border);flex-shrink:0}
+.ptab{flex:1;padding:9px 8px;font-size:10px;font-weight:600;color:var(--ink3);background:none;border:none;text-align:center;transition:color .15s;border-bottom:2px solid transparent}
+.ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.ptab-content{display:none;flex:1;overflow-y:auto;padding:12px}
+.ptab-content.active{display:flex;flex-direction:column}
+.dp-hdr{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
+.dp-cat-lbl{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.dp-sup{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;line-height:1.2}
+.dp-hdr-acts{flex-shrink:0}
+.dp-edit-btn{display:flex;align-items:center;gap:4px;background:var(--card);border:.5px solid var(--border);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:600;color:var(--ink3);transition:all .15s}
+.dp-edit-btn:hover{border-color:var(--accent3);color:var(--accent)}
+.dp-edit-btn.on{background:var(--red-light);border-color:#FECACA;color:var(--red)}
+.dp-edited-notice{display:none;align-items:center;gap:5px;background:var(--warn-light);border:.5px solid #FDE68A;border-radius:6px;padding:6px 10px;font-size:10px;color:var(--warn);margin-bottom:8px}
+.dp-edited-notice.show{display:flex}
+.dp-sec{margin-bottom:12px}
+.dp-lbl{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.dp-status-view{display:flex;align-items:center;gap:6px;font-size:12px}
+.dp-val-big{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink)}
+.dp-obs-txt{font-size:12px;line-height:1.55;color:var(--ink2)}
+.dp-obs-empty{font-size:11px;color:var(--ink4);font-style:italic}
+.dp-select{width:100%;padding:7px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:var(--card);color:var(--ink);outline:none}
+.dp-select:focus{border-color:var(--accent3)}
+.dp-input{width:100%;padding:7px 10px;border:.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Mono',monospace;background:var(--card);color:var(--ink);outline:none}
+.dp-input:focus{border-color:var(--accent3)}
+.dp-textarea{width:100%;padding:7px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:var(--card);color:var(--ink);outline:none;resize:vertical;min-height:70px;line-height:1.5}
+.dp-textarea:focus{border-color:var(--accent3)}
+.dp-footer{display:flex;gap:6px;align-items:center;padding:10px 12px;border-top:.5px solid var(--border);flex-shrink:0}
+.dp-sel-btn{flex:1;background:var(--accent);color:#fff;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:600;transition:background .15s}
+.dp-sel-btn:hover{background:var(--accent2)}
+.dp-sel-btn.desel{background:var(--red-light);color:var(--red);border:.5px solid #FECACA}
+.dp-sel-btn.desel:hover{background:#FEE2E2}
+.dp-hint{font-size:9px;color:var(--ink4);flex-shrink:0}
+.dp-save-btn{flex:1;background:var(--accent);color:#fff;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:600}
+.dp-save-btn:hover{background:var(--accent2)}
+.dp-cancel-btn{background:none;border:.5px solid var(--border);border-radius:7px;padding:9px 14px;font-size:12px;font-weight:500;color:var(--ink3)}
+
+/* ── COMPARE TAB ── */
+.compare-list{display:flex;flex-direction:column;gap:6px}
+.cmp-card{background:var(--surface);border:.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:border-color .15s}
+.cmp-card:hover{border-color:var(--accent3)}
+.cmp-card.cmp-sel{border-color:var(--accent3);background:var(--accent-xlight)}
+.cmp-card.cmp-cur{border-color:var(--accent);background:var(--accent-light)}
+.cmp-sup{font-size:12px;font-weight:600;margin-bottom:3px;color:var(--ink)}
+.cmp-row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink3)}
+.cmp-val{font-family:'DM Mono',monospace;font-weight:600;color:var(--ink);font-size:12px}
+.cmp-badge{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:600}
+.cb-sel{background:var(--accent-light);color:var(--accent)}
+.cb-cur{background:rgba(26,56,32,.15);color:var(--accent2)}
+
+/* ── CAT NOTE TAB ── */
+.cat-note-section{display:flex;flex-direction:column;gap:8px}
+.cat-note-input{padding:8px 10px;border:.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;background:var(--card);color:var(--ink);outline:none;resize:vertical;min-height:100px;line-height:1.5}
+.cat-note-input:focus{border-color:var(--accent3)}
+.cat-note-save-row{display:flex;gap:6px}
+.btn-xs{background:var(--card);border:.5px solid var(--border);border-radius:6px;padding:6px 11px;font-size:11px;font-weight:500;color:var(--ink3)}
+.btn-xs.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:60px;right:12px;z-index:400;display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none;opacity:0;transition:opacity .2s}
+.fab.on{opacity:1;pointer-events:auto}
+.fab-tag{background:var(--warn);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.fab-btn{display:flex;align-items:center;gap:6px;background:var(--accent2);color:#fff;border:none;border-radius:20px;padding:9px 14px;font-size:11px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.fab-n{background:rgba(255,255,255,.25);border-radius:10px;padding:0 5px;font-size:9px;font-weight:700}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border-radius:16px 16px 0 0;width:100%;padding-bottom:env(safe-area-inset-bottom,0)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:.5px solid var(--border)}
+.modal-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.modal-x{background:none;border:none;font-size:18px;color:var(--ink4);padding:0 2px}
+.modal-body{padding:10px 10px 2px}
+.modal-desc{font-size:11px;color:var(--ink3);margin-bottom:8px;padding:0 4px}
+.modal-opt{width:100%;display:flex;align-items:center;gap:10px;background:var(--surface);border:.5px solid var(--border);border-radius:9px;padding:11px 12px;margin-bottom:6px;text-align:left;transition:all .15s}
+.modal-opt:hover{border-color:var(--accent3);background:var(--accent-xlight)}
+.mo-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic-o{background:#FEF3C7;color:#D97706}
+.ic-g{background:var(--accent-light);color:var(--accent2)}
+.ic-b{background:#EFF6FF;color:#2563EB}
+.ic-p{background:#F3E8FF;color:#7C3AED}
+.mo-lbl{font-size:11px;font-weight:600;color:var(--ink);margin-bottom:1px}
+.mo-sub{font-size:10px;color:var(--ink3)}
+.modal-foot{padding:8px 10px 12px;border-top:.5px solid var(--border)}
+.modal-cancel{width:100%;background:none;border:.5px solid var(--border);border-radius:8px;padding:9px;font-size:12px;font-weight:500;color:var(--ink3)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(8px);background:rgba(22,20,15,.9);color:#fff;padding:7px 14px;border-radius:20px;font-size:11px;font-weight:600;opacity:0;transition:all .22s;pointer-events:none;white-space:nowrap;z-index:700}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    </div>
+    <div>
+      <div class="brand-text" id="topFileName">Orçamento de Obra</div>
+      <div class="brand-sub">Excel Add-in</div>
+    </div>
+  </div>
+  <div class="save-flash" id="saveFlash"></div>
+  <button class="top-btn" id="btnRefresh" style="display:none" onclick="refreshData()">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+    Recarregar
+  </button>
+  <button class="top-btn" onclick="openSaveModal()">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+    Exportar
+  </button>
+</div>
+
+<!-- PROGRESS BAR (outside scroll) -->
+<div id="progressWrap">
+  <div class="progress-inner">
+    <div class="prog-bar-track"><div class="prog-bar-fill" id="progFill" style="width:0%"></div></div>
+    <div class="prog-label" id="progLabel">—</div>
+    <div class="prog-pct" id="progPct">0%</div>
+  </div>
+</div>
+
+<!-- SCROLL AREA -->
+<div id="scrollArea">
+
+  <!-- LOADING SCREEN -->
+  <div id="loadingScreen">
+    <div class="load-spinner"></div>
+    <div class="load-txt">Lendo planilha…</div>
+  </div>
+
+  <!-- SEARCH + FILTER + CONTENT (shown after load) -->
+  <div id="mainWrap" style="display:none">
+    <div class="search-wrap">
+      <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" id="searchInput" placeholder="Buscar categoria ou fornecedor…" oninput="onSearch(this.value)">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+    </div>
+
+    <div class="filter-wrap">
+      <button class="filter-btn active" onclick="setFilter('all',this)">Todos</button>
+      <button class="filter-btn" onclick="setFilter('RECEBIDO',this)">Recebidos</button>
+      <button class="filter-btn" onclick="setFilter('AGUARDANDO',this)">Aguardando</button>
+    </div>
+
+    <div id="mainContent">
+      <div class="content-hdr">
+        <div>
+          <h1 id="pageTitle">—</h1>
+          <p id="pageSub"></p>
+        </div>
+        <div class="top-stats" id="topStats"></div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+      <div class="no-results" id="noResults" style="display:none">
+        Nenhum resultado para "<strong id="noResultsTerm"></strong>"
+      </div>
+    </div>
+  </div>
+</div><!-- /scrollArea -->
+
+<!-- SUMMARY BAR (outside scroll, sticks to bottom) -->
+<div class="sum-bar" id="sumBar">
+  <div class="sum-item">
+    <div class="s-lbl">Selecionados</div>
+    <div class="s-val" id="sbCount">0</div>
+  </div>
+  <div class="sum-sep"></div>
+  <div class="sum-item">
+    <div class="s-lbl">Total</div>
+    <div class="s-val sum-green" id="sbTotal">R$ 0</div>
+  </div>
+  <div class="sum-sep"></div>
+  <div class="sum-item">
+    <div class="s-lbl">Menor</div>
+    <div class="s-val" id="sbMin">—</div>
+  </div>
+  <div class="sum-sep"></div>
+  <div class="sum-item">
+    <div class="s-lbl">Maior</div>
+    <div class="s-val sum-red" id="sbMax">—</div>
+  </div>
+  <div class="sum-spacer"></div>
+  <button class="reset-btn" onclick="resetSelections()">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+    Limpar
+  </button>
+</div>
+
+<!-- DETAIL PANEL (full overlay) -->
+<div id="panel">
+  <div class="panel-hdr">
+    <button class="panel-close-btn" onclick="closePanel()">←</button>
+    <div class="panel-nav-wrap">
+      <button class="nav-btn" id="navPrev" onclick="navOpt(-1)">‹</button>
+      <span class="nav-info" id="navInfo">1/1</span>
+      <button class="nav-btn" id="navNext" onclick="navOpt(1)">›</button>
+    </div>
+    <div style="font-size:10px;opacity:.6;flex-shrink:0">ESC fecha</div>
+  </div>
+
+  <div class="panel-tabs">
+    <button class="ptab active" id="tab-detail" onclick="switchTab('detail')">Detalhe</button>
+    <button class="ptab" id="tab-compare" onclick="switchTab('compare')">Comparar</button>
+    <button class="ptab" id="tab-note" onclick="switchTab('note')">Nota</button>
+  </div>
+
+  <!-- Tab: Detalhe -->
+  <div class="ptab-content active" id="tc-detail">
+    <div class="dp-hdr">
+      <div style="flex:1;min-width:0">
+        <div class="dp-cat-lbl" id="dpCat"></div>
+        <div class="dp-sup" id="dpSup"></div>
+      </div>
+      <div class="dp-hdr-acts">
+        <button class="dp-edit-btn" id="dpEditBtn" onclick="toggleEdit()">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar
+        </button>
+      </div>
+    </div>
+    <div class="dp-edited-notice" id="dpEditedNotice">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Item editado manualmente
+    </div>
+    <div class="dp-sec">
+      <div class="dp-lbl">Status</div>
+      <div id="dpStatusView" class="dp-status-view"></div>
+      <select class="dp-select" id="dpStatusInput" style="display:none">
+        <option value="RECEBIDO">Recebido</option>
+        <option value="AGUARDANDO">Aguardando retorno</option>
+        <option value="NAO SOLICITADO">Não solicitado</option>
+      </select>
+    </div>
+    <div class="dp-sec">
+      <div class="dp-lbl">Valor</div>
+      <div class="dp-val-big" id="dpValView"></div>
+      <input class="dp-input" id="dpValInput" type="number" min="0" step="0.01" placeholder="Valor em R$" style="display:none">
+    </div>
+    <div class="dp-sec">
+      <div class="dp-lbl">Observações</div>
+      <div id="dpObsView"></div>
+      <textarea class="dp-textarea" id="dpObsInput" placeholder="Sem observações." style="display:none"></textarea>
+    </div>
+  </div>
+  <div class="dp-footer" id="dpViewFoot">
+    <button class="dp-sel-btn" id="dpSelBtn" onclick="toggleSel()">Selecionar</button>
+    <div class="dp-hint">← → navegar</div>
+  </div>
+  <div class="dp-footer" id="dpEditFoot" style="display:none">
+    <button class="dp-save-btn" onclick="commitEdit()">Salvar na planilha</button>
+    <button class="dp-cancel-btn" onclick="cancelEdit()">Cancelar</button>
+  </div>
+
+  <!-- Tab: Comparar -->
+  <div class="ptab-content" id="tc-compare" style="display:none">
+    <div class="compare-list" id="compareList"></div>
+  </div>
+
+  <!-- Tab: Nota -->
+  <div class="ptab-content" id="tc-note" style="display:none">
+    <div class="cat-note-section">
+      <div class="dp-lbl" id="noteForCat"></div>
+      <div id="catNoteView"></div>
+      <textarea class="cat-note-input" id="catNoteInput" placeholder="Adicione uma nota para essa categoria…" style="display:none"></textarea>
+      <div class="cat-note-save-row" id="catNoteSaveRow" style="display:none">
+        <button class="btn-xs primary" onclick="saveCatNote()">Salvar nota</button>
+        <button class="btn-xs" onclick="cancelCatNote()">Cancelar</button>
+      </div>
+      <div class="cat-note-save-row" id="catNoteEditRow">
+        <button class="btn-xs" onclick="editCatNote()">Editar nota</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<div class="fab" id="fab">
+  <div class="fab-tag" id="fabTag"></div>
+  <button class="fab-btn" onclick="openSaveModal()">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+    Exportar
+    <div class="fab-n" id="fabN">0</div>
+  </button>
+</div>
+
+<!-- MODAL: Exportar -->
+<div class="modal-bg" id="saveModal" onclick="if(event.target===this)closeSaveModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Exportar / Salvar</div>
+      <button class="modal-x" onclick="closeSaveModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc">O que fazer com o estado atual?</div>
+      <button class="modal-opt" onclick="createSelSheet()">
+        <div class="mo-icon ic-g"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <div><div class="mo-lbl">Criar aba "Selecionados"</div><div class="mo-sub">Gera nova aba na planilha atual com os selecionados</div></div>
+      </button>
+      <button class="modal-opt" onclick="createAllSheet()">
+        <div class="mo-icon ic-p"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <div><div class="mo-lbl">Criar aba completa</div><div class="mo-sub">Todas as categorias com marcação dos selecionados</div></div>
+      </button>
+      <button class="modal-opt" onclick="downloadXlsx()">
+        <div class="mo-icon ic-b"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+        <div><div class="mo-lbl">Baixar .xlsx</div><div class="mo-sub">Arquivo externo com abas: Todos + Selecionados</div></div>
+      </button>
+      <button class="modal-opt" onclick="downloadCsv()">
+        <div class="mo-icon ic-o"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div><div class="mo-lbl">Baixar .csv</div><div class="mo-sub">Apenas selecionados em formato CSV</div></div>
+      </button>
+    </div>
+    <div class="modal-foot"><button class="modal-cancel" onclick="closeSaveModal()">Cancelar</button></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let categories   = [];
+let selections   = {};   // { "catIndex": optIndex }
+let catNotes     = {};   // { "catIndex": "texto" }
+let currentFilter = 'all';
+let searchTerm   = '';
+let panelCat = -1, panelOpt = -1;
+let editMode = false;
+let activeTab = 'detail';
+
+// COL indices (0-indexed) matching Python's COL_MAP {val:6, status:8, obs:10} → 0-indexed: 5,7,9
+const COL_MAP = { val: 5, status: 7, obs: 9 };
+
+// ══════════════════════════════════════════════════════════════
+// OFFICE.JS INIT
+// ══════════════════════════════════════════════════════════════
+Office.onReady(async (info) => {
+  if (info.host === Office.HostType.Excel) {
+    await loadFromExcel();
+  } else {
+    showError('Este add-in requer o Microsoft Excel.');
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// LOAD DATA FROM ACTIVE WORKSHEET
+// ══════════════════════════════════════════════════════════════
+async function loadFromExcel() {
+  document.getElementById('loadingScreen').innerHTML =
+    '<div class="load-spinner"></div><div class="load-txt">Lendo planilha…</div>';
+  document.getElementById('loadingScreen').style.display = 'flex';
+  document.getElementById('mainWrap').style.display = 'none';
+
+  try {
+    await Excel.run(async (context) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      sheet.load('name');
+      const usedRange = sheet.getUsedRange();
+      usedRange.load(['values', 'rowIndex']);
+      await context.sync();
+
+      const sheetName = sheet.name;
+      const rowOffset = usedRange.rowIndex; // 0-indexed start row in Excel
+      const rows = usedRange.values;
+
+      categories = parseCategories(rows, rowOffset);
+      selections = {};
+      catNotes = {};
+
+      if (categories.length === 0) {
+        showEmpty(sheetName);
+        return;
+      }
+
+      const totalSuppliers = categories.reduce((a, c) => a + c.opts.length, 0);
+      document.getElementById('topFileName').textContent = sheetName;
+      document.getElementById('pageTitle').textContent = sheetName;
+      document.getElementById('pageSub').textContent =
+        `${categories.length} categorias · ${totalSuppliers} fornecedores`;
+
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('mainWrap').style.display = 'block';
+      document.getElementById('mainContent').style.display = 'block';
+      document.getElementById('progressWrap').style.display = 'block';
+      document.getElementById('btnRefresh').style.display = 'flex';
+
+      renderGrid();
+      updateTotals();
+      toast(`${categories.length} categorias carregadas ✓`);
+    });
+  } catch (e) {
+    showError(e.message || String(e));
+  }
+}
+
+async function refreshData() {
+  selections = {};
+  catNotes = {};
+  await loadFromExcel();
+}
+
+function showError(msg) {
+  document.getElementById('loadingScreen').innerHTML = `
+    <div class="error-box">
+      <h3>Erro ao carregar</h3>
+      <p>${escHtml(msg)}</p>
+      <button onclick="loadFromExcel()">Tentar novamente</button>
+    </div>`;
+  document.getElementById('loadingScreen').style.display = 'flex';
+}
+
+function showEmpty(sheetName) {
+  document.getElementById('loadingScreen').innerHTML = `
+    <div class="empty-box">
+      <h3>Formato não reconhecido</h3>
+      <p>A aba <strong>${escHtml(sheetName)}</strong> não segue o padrão esperado de orçamento.<br><br>
+      Verifique se as colunas C=Categoria, D=Fornecedor, F=Valor, H=Status, J=Obs estão corretas.</p>
+      <button onclick="loadFromExcel()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Tentar novamente
+      </button>
+    </div>`;
+  document.getElementById('loadingScreen').style.display = 'flex';
+  document.getElementById('mainWrap').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// PARSE CATEGORIES (ported from Python load_data())
+// ══════════════════════════════════════════════════════════════
+function parseCategories(rows, rowOffset) {
+  const STATUS_KEYWORDS = ['RECEBIDO', 'AGUARDANDO', 'NÃO SOLICITADO', 'NAO SOLICITADO', 'NÃO SOLICI'];
+  function isStatus(s) {
+    const su = String(s || '').toUpperCase();
+    return STATUS_KEYWORDS.some(k => su.includes(k));
+  }
+
+  const result = [];
+  const catIndex = {};
+  let lastCat = '', lastSup = '';
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const cat    = String(row[2] || '').trim();
+    const sup    = String(row[3] || '').trim();
+    const valR   = row[5];
+    const status = String(row[7] || '').trim();
+    const obs    = String(row[9] || '').trim();
+
+    if (cat && !cat.startsWith('#') && cat !== 'ITEM' && cat.length > 1 && !isStatus(cat)) {
+      lastCat = cat;
+    }
+    if (sup && sup.length > 1 && sup !== 'FORNECEDOR') {
+      lastSup = sup;
+    }
+
+    if (!isStatus(status) || !lastCat) continue;
+
+    const val = (typeof valR === 'number') ? valR : null;
+
+    const opt = {
+      xl_row: rowOffset + i + 1, // 1-indexed absolute Excel row
+      sup: lastSup,
+      val: val,
+      status: status,
+      obs: obs,
+    };
+
+    if (!(lastCat in catIndex)) {
+      catIndex[lastCat] = result.length;
+      result.push({ name: lastCat, opts: [] });
+    }
+    result[catIndex[lastCat]].opts.push(opt);
+  }
+
+  return result;
+}
+
+// ══════════════════════════════════════════════════════════════
+// SAVE FIELD TO EXCEL CELL (replaces Flask /save endpoint)
+// ══════════════════════════════════════════════════════════════
+async function saveField(xl_row, field, value) {
+  const colIdx = COL_MAP[field];
+  if (colIdx === undefined) throw new Error('Campo inválido: ' + field);
+
+  let writeVal = value;
+  if (field === 'val') {
+    writeVal = (value !== null && value !== '' && !isNaN(parseFloat(value)))
+      ? parseFloat(value) : null;
+  }
+
+  await Excel.run(async (context) => {
+    const sheet = context.workbook.worksheets.getActiveWorksheet();
+    // Office.js getCell is 0-indexed; xl_row is 1-indexed
+    const cell = sheet.getCell(xl_row - 1, colIdx);
+    cell.values = [[writeVal ?? '']];
+    await context.sync();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+const BRL = v => 'R$\u00A0' + Math.round(v).toLocaleString('pt-BR');
+const escHtml = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function statusLabel(s) {
+  const u = (s || '').toUpperCase();
+  if (u.includes('RECEBIDO')) return 'Recebido';
+  if (u.includes('AGUARDANDO')) return 'Aguardando retorno';
+  return 'Não solicitado';
+}
+function statusDot(s) {
+  const u = (s || '').toUpperCase();
+  if (u.includes('RECEBIDO')) return 'dot-green';
+  if (u.includes('AGUARDANDO')) return 'dot-yellow';
+  return 'dot-gray';
+}
+function optMatchesFilter(opt) {
+  if (currentFilter === 'all') return true;
+  return (opt.status || '').toUpperCase().includes(currentFilter);
+}
+function catMatchesSearch(cat) {
+  if (!searchTerm) return true;
+  const t = searchTerm.toLowerCase();
+  if (cat.name.toLowerCase().includes(t)) return true;
+  return cat.opts.some(o => (o.sup || '').toLowerCase().includes(t));
+}
+
+// ── toast / flash ──
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2200);
+}
+function flashSaved() {
+  const d = document.getElementById('saveFlash');
+  d.classList.add('on'); setTimeout(() => d.classList.remove('on'), 1600);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SEARCH & FILTER
+// ══════════════════════════════════════════════════════════════
+function onSearch(val) {
+  searchTerm = val.trim();
+  document.getElementById('searchClear').classList.toggle('visible', !!searchTerm);
+  renderGrid();
+}
+function clearSearch() {
+  searchTerm = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchClear').classList.remove('visible');
+  renderGrid();
+}
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+
+// ══════════════════════════════════════════════════════════════
+// GRID RENDER
+// ══════════════════════════════════════════════════════════════
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  let visCount = 0;
+
+  categories.forEach((cat, ci) => {
+    const show = catMatchesSearch(cat);
+    const selIdx = selections[ci];
+    const selOpt = selIdx != null ? cat.opts[selIdx] : null;
+    const note = catNotes[ci] || '';
+
+    const card = document.createElement('div');
+    card.className = 'cat-card' + (selOpt ? ' has-sel' : '');
+    if (!show) card.classList.add('search-hidden');
+    else visCount++;
+
+    const selValHtml = selOpt
+      ? `<span class="cat-sel-val">${selOpt.val != null ? BRL(selOpt.val) : '✓'}</span>`
+      : `<span class="cat-sel-val none">Nenhum</span>`;
+
+    let optsHtml = '';
+    cat.opts.forEach((opt, oi) => {
+      if (!optMatchesFilter(opt)) return;
+      const isSel = selIdx === oi;
+      const isPrev = panelCat === ci && panelOpt === oi;
+      const hlt = searchTerm && (opt.sup || '').toLowerCase().includes(searchTerm.toLowerCase());
+      optsHtml += `
+        <div class="opt-row${isSel ? ' sel' : ''}${isPrev ? ' previewing' : ''}" id="row-${ci}-${oi}"
+          onclick="openPanel(${ci},${oi})">
+          <div class="radio-wrap"><div class="radio"><div class="radio-dot"></div></div></div>
+          <div class="opt-body">
+            <div class="opt-sup"${hlt ? ' style="color:var(--accent);font-weight:600"' : ''}>${escHtml(opt.sup || '—')}</div>
+            <div class="opt-status">${statusLabel(opt.status)}</div>
+          </div>
+          <div class="opt-right">
+            ${opt.edited ? '<span class="edited-dot" title="Editado"></span>' : ''}
+            <span class="status-dot ${statusDot(opt.status)}"></span>
+            <span class="${opt.val != null ? 'opt-val' : 'opt-val no-val'}">${opt.val != null ? BRL(opt.val) : '—'}</span>
+          </div>
+        </div>`;
+    });
+
+    card.innerHTML = `
+      <div class="cat-head">
+        <div>
+          <div class="cat-name">${escHtml(cat.name)}</div>
+          <div class="cat-sub">${cat.opts.length} fornecedor${cat.opts.length !== 1 ? 'es' : ''}</div>
+        </div>
+        ${selValHtml}
+      </div>
+      ${note ? `<div class="cat-note-line show">📝 ${escHtml(note.slice(0, 60))}${note.length > 60 ? '…' : ''}</div>` : ''}
+      <div class="opts-list">${optsHtml}</div>`;
+    grid.appendChild(card);
+  });
+
+  const noRes = document.getElementById('noResults');
+  if (searchTerm && visCount === 0) {
+    noRes.style.display = 'block';
+    document.getElementById('noResultsTerm').textContent = searchTerm;
+  } else {
+    noRes.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOTALS
+// ══════════════════════════════════════════════════════════════
+function updateTotals() {
+  let total = 0, selCount = 0, minT = Infinity, maxT = -Infinity;
+  let editCount = 0;
+  let cntRec = 0, cntAwait = 0, cntNot = 0;
+
+  categories.forEach((cat, ci) => {
+    const selIdx = selections[ci];
+    cat.opts.forEach(opt => {
+      if (opt.edited) editCount++;
+      const su = (opt.status || '').toUpperCase();
+      if (su.includes('RECEBIDO')) cntRec++;
+      else if (su.includes('AGUARDANDO')) cntAwait++;
+      else cntNot++;
+    });
+    if (selIdx != null) {
+      const opt = cat.opts[selIdx];
+      if (opt) {
+        selCount++;
+        if (opt.val != null) {
+          total += opt.val;
+          if (opt.val < minT) minT = opt.val;
+          if (opt.val > maxT) maxT = opt.val;
+        }
+      }
+    }
+  });
+
+  document.getElementById('topStats').innerHTML =
+    `<div class="stat-badge sb-green"><span class="stat-dot sd-g"></span>${cntRec} rec.</div>
+     <div class="stat-badge sb-yellow"><span class="stat-dot sd-y"></span>${cntAwait} ag.</div>
+     <div class="stat-badge sb-gray"><span class="stat-dot sd-gr"></span>${cntNot} n.s.</div>`;
+
+  const pct = categories.length ? Math.round((selCount / categories.length) * 100) : 0;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progLabel').textContent = `${selCount} de ${categories.length} cobertos`;
+  document.getElementById('progPct').textContent = pct + '%';
+
+  const sb = document.getElementById('sumBar');
+  if (selCount > 0) {
+    sb.classList.add('visible');
+    document.getElementById('sbCount').textContent = selCount;
+    document.getElementById('sbTotal').textContent = BRL(total);
+    document.getElementById('sbMin').textContent = minT < Infinity ? BRL(minT) : '—';
+    document.getElementById('sbMax').textContent = maxT > -Infinity ? BRL(maxT) : '—';
+  } else {
+    sb.classList.remove('visible');
+  }
+
+  const fab = document.getElementById('fab');
+  if (editCount > 0) {
+    fab.classList.add('on');
+    document.getElementById('fabN').textContent = editCount;
+    document.getElementById('fabTag').textContent = `${editCount} edição${editCount > 1 ? 'ões' : ''} pendente${editCount > 1 ? 's' : ''}`;
+  } else {
+    fab.classList.remove('on');
+  }
+}
+
+function resetSelections() {
+  selections = {};
+  renderGrid();
+  updateTotals();
+  toast('Seleções limpas');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PANEL
+// ══════════════════════════════════════════════════════════════
+function openPanel(ci, oi) {
+  panelCat = ci; panelOpt = oi; editMode = false;
+  activeTab = 'detail';
+  renderPanel();
+  renderCompare();
+  renderCatNote();
+  switchTab('detail');
+  document.getElementById('panel').classList.add('open');
+  document.querySelectorAll('.opt-row.previewing').forEach(r => r.classList.remove('previewing'));
+  const row = document.getElementById(`row-${ci}-${oi}`);
+  if (row) row.classList.add('previewing');
+}
+
+function closePanel() {
+  if (editMode) { cancelEdit(); return; }
+  document.getElementById('panel').classList.remove('open');
+  document.querySelectorAll('.opt-row.previewing').forEach(r => r.classList.remove('previewing'));
+  panelCat = -1; panelOpt = -1;
+}
+
+function navOpt(dir) {
+  if (panelCat < 0) return;
+  const cat = categories[panelCat];
+  const n = cat.opts.length;
+  panelOpt = (panelOpt + dir + n) % n;
+  editMode = false;
+  renderPanel();
+  renderCompare();
+  document.querySelectorAll('.opt-row.previewing').forEach(r => r.classList.remove('previewing'));
+  const row = document.getElementById(`row-${panelCat}-${panelOpt}`);
+  if (row) row.classList.add('previewing');
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  ['detail','compare','note'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('tc-' + t).style.display = t === tab ? 'flex' : 'none';
+  });
+  // Show/hide footer based on tab
+  const isDetail = (tab === 'detail');
+  document.getElementById('dpViewFoot').style.display = isDetail && !editMode ? 'flex' : 'none';
+  document.getElementById('dpEditFoot').style.display = isDetail && editMode ? 'flex' : 'none';
+}
+
+function renderPanel() {
+  if (panelCat < 0) return;
+  const cat = categories[panelCat];
+  const opt = cat.opts[panelOpt];
+  const isSel = selections[panelCat] === panelOpt;
+
+  document.getElementById('navInfo').textContent = `${panelOpt + 1} / ${cat.opts.length}`;
+  document.getElementById('navPrev').disabled = (cat.opts.length <= 1);
+  document.getElementById('navNext').disabled = (cat.opts.length <= 1);
+  document.getElementById('dpCat').textContent = cat.name;
+  document.getElementById('dpSup').textContent = opt.sup || '—';
+  document.getElementById('dpEditedNotice').classList.toggle('show', !!opt.edited);
+
+  const su = (opt.status || '').toUpperCase();
+  document.getElementById('dpStatusView').innerHTML =
+    `<span class="status-dot ${statusDot(opt.status)}"></span>${statusLabel(opt.status)}`;
+  document.getElementById('dpStatusInput').value =
+    su.includes('RECEBIDO') ? 'RECEBIDO' : su.includes('AGUARDANDO') ? 'AGUARDANDO' : 'NAO SOLICITADO';
+
+  document.getElementById('dpValView').textContent = opt.val != null ? BRL(opt.val) : '—';
+  document.getElementById('dpValInput').value = opt.val != null ? opt.val : '';
+
+  const ov = document.getElementById('dpObsView');
+  ov.innerHTML = opt.obs
+    ? `<div class="dp-obs-txt">${escHtml(opt.obs)}</div>`
+    : `<div class="dp-obs-empty">Sem observações.</div>`;
+  document.getElementById('dpObsInput').value = opt.obs || '';
+
+  const btn = document.getElementById('dpSelBtn');
+  if (isSel) { btn.textContent = 'Remover seleção'; btn.className = 'dp-sel-btn desel'; }
+  else { btn.textContent = 'Selecionar'; btn.className = 'dp-sel-btn'; }
+
+  const eb = document.getElementById('dpEditBtn');
+  eb.classList.toggle('on', editMode);
+  eb.innerHTML = editMode
+    ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cancelar`
+    : `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar`;
+
+  ['StatusView','ValView','ObsView'].forEach(id => {
+    document.getElementById('dp' + id).style.display = editMode ? 'none' : '';
+  });
+  ['StatusInput','ValInput','ObsInput'].forEach(id => {
+    document.getElementById('dp' + id).style.display = editMode ? '' : 'none';
+  });
+
+  document.getElementById('dpViewFoot').style.display = editMode ? 'none' : 'flex';
+  document.getElementById('dpEditFoot').style.display = editMode ? 'flex' : 'none';
+}
+
+function toggleSel() {
+  if (panelCat < 0) return;
+  if (selections[panelCat] === panelOpt) {
+    delete selections[panelCat];
+  } else {
+    selections[panelCat] = panelOpt;
+  }
+  renderGrid();
+  renderPanel();
+  renderCompare();
+  updateTotals();
+}
+
+function toggleEdit() {
+  if (editMode) { cancelEdit(); return; }
+  editMode = true;
+  renderPanel();
+  document.getElementById('dpValInput').focus();
+}
+function cancelEdit() { editMode = false; renderPanel(); }
+
+async function commitEdit() {
+  if (!editMode || panelCat < 0) return;
+  const opt = categories[panelCat].opts[panelOpt];
+  const newStatus = document.getElementById('dpStatusInput').value;
+  const rawVal = parseFloat(document.getElementById('dpValInput').value);
+  const newVal = isNaN(rawVal) ? null : rawVal;
+  const newObs = document.getElementById('dpObsInput').value.trim();
+
+  const changes = [];
+  const curStatus = (opt.status || '').toUpperCase().includes('RECEBIDO') ? 'RECEBIDO' :
+    (opt.status || '').toUpperCase().includes('AGUARDANDO') ? 'AGUARDANDO' : 'NAO SOLICITADO';
+  if (newStatus !== curStatus) changes.push({ field: 'status', value: newStatus });
+  if (newVal !== opt.val) changes.push({ field: 'val', value: newVal });
+  if (newObs !== (opt.obs || '')) changes.push({ field: 'obs', value: newObs });
+
+  if (!changes.length) { cancelEdit(); return; }
+
+  opt.status = newStatus; opt.val = newVal; opt.obs = newObs; opt.edited = true;
+
+  try {
+    for (const ch of changes) {
+      await saveField(opt.xl_row, ch.field, ch.value);
+    }
+    flashSaved();
+    toast('Salvo na planilha ✓');
+  } catch (e) {
+    toast('Erro ao salvar: ' + (e.message || e));
+  }
+
+  editMode = false;
+  renderGrid();
+  renderPanel();
+  renderCompare();
+  updateTotals();
+}
+
+// ══════════════════════════════════════════════════════════════
+// COMPARE TAB
+// ══════════════════════════════════════════════════════════════
+function renderCompare() {
+  if (panelCat < 0) return;
+  const cat = categories[panelCat];
+  const selIdx = selections[panelCat];
+  const list = document.getElementById('compareList');
+
+  const sorted = cat.opts
+    .map((o, i) => ({ ...o, _idx: i }))
+    .filter(o => o.val != null)
+    .sort((a, b) => a.val - b.val);
+
+  if (sorted.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink3);text-align:center;padding:20px">Nenhum fornecedor com valor para comparar.</div>';
+    return;
+  }
+
+  const minVal = sorted[0].val;
+  list.innerHTML = sorted.map(o => {
+    const isSel = selIdx === o._idx;
+    const isCur = panelOpt === o._idx;
+    const pct = ((o.val - minVal) / minVal * 100).toFixed(1);
+    return `
+      <div class="cmp-card${isSel ? ' cmp-sel' : ''}${isCur ? ' cmp-cur' : ''}" onclick="panelOpt=${o._idx};renderPanel();renderCompare()">
+        <div class="cmp-sup">${escHtml(o.sup || '—')}</div>
+        <div class="cmp-row">
+          <span class="cmp-val">${BRL(o.val)}</span>
+          ${o._idx !== sorted[0]._idx ? `<span style="font-size:9px;color:var(--ink3)">+${pct}%</span>` : '<span style="font-size:9px;color:#16A34A">menor ✓</span>'}
+          ${isSel ? '<span class="cmp-badge cb-sel">selecionado</span>' : ''}
+          ${isCur && !isSel ? '<span class="cmp-badge cb-cur">visualizando</span>' : ''}
+        </div>
+        <div class="cmp-row" style="margin-top:3px">
+          <span class="status-dot ${statusDot(o.status)}"></span>
+          <span>${statusLabel(o.status)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CATEGORY NOTE TAB
+// ══════════════════════════════════════════════════════════════
+function renderCatNote() {
+  if (panelCat < 0) return;
+  const cat = categories[panelCat];
+  const note = catNotes[panelCat] || '';
+  document.getElementById('noteForCat').textContent = cat.name;
+  const nv = document.getElementById('catNoteView');
+  nv.innerHTML = note
+    ? `<div class="dp-obs-txt">${escHtml(note)}</div>`
+    : `<div class="dp-obs-empty">Nenhuma nota para esta categoria.</div>`;
+  document.getElementById('catNoteInput').style.display = 'none';
+  document.getElementById('catNoteSaveRow').style.display = 'none';
+  document.getElementById('catNoteEditRow').style.display = 'flex';
+}
+function editCatNote() {
+  document.getElementById('catNoteInput').value = catNotes[panelCat] || '';
+  document.getElementById('catNoteInput').style.display = 'block';
+  document.getElementById('catNoteSaveRow').style.display = 'flex';
+  document.getElementById('catNoteEditRow').style.display = 'none';
+  document.getElementById('catNoteView').style.display = 'none';
+}
+function cancelCatNote() { renderCatNote(); document.getElementById('catNoteView').style.display = ''; }
+function saveCatNote() {
+  catNotes[panelCat] = document.getElementById('catNoteInput').value.trim();
+  document.getElementById('catNoteView').style.display = '';
+  renderCatNote();
+  renderGrid();
+  toast('Nota salva ✓');
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT: CREATE SHEET IN CURRENT WORKBOOK
+// ══════════════════════════════════════════════════════════════
+async function createSelSheet() {
+  closeSaveModal();
+  if (!Object.keys(selections).length) { toast('Selecione ao menos um item.'); return; }
+
+  try {
+    await Excel.run(async (context) => {
+      const wb = context.workbook;
+
+      // Remove existing sheet if present
+      try {
+        const existing = wb.worksheets.getItem('Selecionados');
+        existing.delete();
+        await context.sync();
+      } catch (e) { /* sheet doesn't exist, ok */ }
+
+      const ws = wb.worksheets.add('Selecionados');
+      const headers = [['Categoria', 'Fornecedor', 'Valor (R$)', 'Status', 'Observações']];
+      const hdr = ws.getRange('A1:E1');
+      hdr.values = headers;
+      hdr.format.fill.color = '#1C3A22';
+      hdr.format.font.color = '#FFFFFF';
+      hdr.format.font.bold = true;
+      hdr.format.horizontalAlignment = 'Center';
+
+      let rowNum = 2, total = 0;
+      for (const [ci, cat] of categories.entries()) {
+        const selOi = selections[ci];
+        if (selOi == null) continue;
+        const opt = cat.opts[selOi];
+        if (!opt) continue;
+        const r = ws.getRange(`A${rowNum}:E${rowNum}`);
+        r.values = [[cat.name, opt.sup, opt.val ?? '', opt.status, opt.obs]];
+        r.format.fill.color = '#EAF3DE';
+        if (opt.val) total += opt.val;
+        rowNum++;
+      }
+
+      const totalRow = ws.getRange(`A${rowNum}:E${rowNum}`);
+      totalRow.values = [['TOTAL', '', total, '', '']];
+      ws.getRange(`A${rowNum}`).format.font.bold = true;
+      ws.getRange(`C${rowNum}`).format.font.bold = true;
+      ws.getRange(`C${rowNum}`).numberFormat = [['R$ #,##0.00']];
+
+      // Column widths
+      ws.getRange('A:A').format.columnWidth = 180;
+      ws.getRange('B:B').format.columnWidth = 180;
+      ws.getRange('C:C').format.columnWidth = 90;
+      ws.getRange('D:D').format.columnWidth = 140;
+      ws.getRange('E:E').format.columnWidth = 220;
+
+      ws.activate();
+      await context.sync();
+      toast('Aba "Selecionados" criada ✓');
+    });
+  } catch (e) {
+    toast('Erro: ' + (e.message || e));
+  }
+}
+
+async function createAllSheet() {
+  closeSaveModal();
+  try {
+    await Excel.run(async (context) => {
+      const wb = context.workbook;
+      try { wb.worksheets.getItem('Resumo Orçamento').delete(); await context.sync(); } catch(e) {}
+
+      const ws = wb.worksheets.add('Resumo Orçamento');
+      const headers = [['Categoria', 'Fornecedor', 'Valor (R$)', 'Status', 'Observações', 'Selecionado']];
+      const hdr = ws.getRange('A1:F1');
+      hdr.values = headers;
+      hdr.format.fill.color = '#1C3A22';
+      hdr.format.font.color = '#FFFFFF';
+      hdr.format.font.bold = true;
+      hdr.format.horizontalAlignment = 'Center';
+
+      let rowNum = 2;
+      for (const [ci, cat] of categories.entries()) {
+        const selOi = selections[ci];
+        for (const [oi, opt] of cat.opts.entries()) {
+          const isSel = selOi === oi;
+          const r = ws.getRange(`A${rowNum}:F${rowNum}`);
+          r.values = [[cat.name, opt.sup, opt.val ?? '', opt.status, opt.obs, isSel ? '✓' : '']];
+          if (isSel) r.format.fill.color = '#EAF3DE';
+          else if (opt.edited) r.format.fill.color = '#FEF3C7';
+          rowNum++;
+        }
+      }
+
+      ws.getRange('A:A').format.columnWidth = 180;
+      ws.getRange('B:B').format.columnWidth = 180;
+      ws.getRange('C:C').format.columnWidth = 90;
+      ws.getRange('D:D').format.columnWidth = 140;
+      ws.getRange('E:E').format.columnWidth = 220;
+      ws.getRange('F:F').format.columnWidth = 80;
+
+      ws.activate();
+      await context.sync();
+      toast('Aba "Resumo Orçamento" criada ✓');
+    });
+  } catch (e) {
+    toast('Erro: ' + (e.message || e));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT: DOWNLOAD FILES (client-side)
+// ══════════════════════════════════════════════════════════════
+function downloadXlsx() {
+  closeSaveModal();
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: All items
+  const allData = [['Categoria','Fornecedor','Valor (R$)','Status','Observações','Selecionado']];
+  categories.forEach((cat, ci) => {
+    const selOi = selections[ci];
+    cat.opts.forEach((opt, oi) => {
+      allData.push([cat.name, opt.sup, opt.val ?? '', opt.status, opt.obs, selOi === oi ? '✓' : '']);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allData), 'Todos os Itens');
+
+  // Sheet 2: Selected only
+  const selData = [['Categoria','Fornecedor','Valor (R$)','Status','Observações']];
+  let total = 0;
+  categories.forEach((cat, ci) => {
+    const selOi = selections[ci];
+    if (selOi == null) return;
+    const opt = cat.opts[selOi];
+    if (!opt) return;
+    selData.push([cat.name, opt.sup, opt.val ?? '', opt.status, opt.obs]);
+    if (opt.val) total += opt.val;
+  });
+  selData.push(['TOTAL', '', total, '', '']);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(selData), 'Selecionados');
+
+  XLSX.writeFile(wb, 'orcamento-completo.xlsx');
+  toast('Excel baixado ✓');
+}
+
+function downloadCsv() {
+  closeSaveModal();
+  const lines = ['\uFEFF"Categoria","Fornecedor","Valor (R$)","Status","Observações"'];
+  categories.forEach((cat, ci) => {
+    const selOi = selections[ci];
+    if (selOi == null) return;
+    const opt = cat.opts[selOi];
+    if (!opt) return;
+    lines.push([`"${cat.name}"`,`"${opt.sup}"`,`"${opt.val ?? ''}"`,`"${opt.status}"`,`"${opt.obs}"`].join(','));
+  });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'orcamento-selecao.csv';
+  a.style.display = 'none'; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 3000);
+  toast('CSV baixado ✓');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════════════
+function openSaveModal()  { document.getElementById('saveModal').classList.add('open'); }
+function closeSaveModal() { document.getElementById('saveModal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (panelCat < 0) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'Escape') closePanel();
+  if (e.key === 'ArrowLeft') navOpt(-1);
+  if (e.key === 'ArrowRight') navOpt(1);
+  if (e.key === 'Enter' && !editMode) toggleSel();
+});
+</script>
+</body>
+</html>
