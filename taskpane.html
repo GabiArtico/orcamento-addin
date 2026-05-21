@@ -85,14 +85,14 @@ body{
 /* ── CATEGORY CARDS ── */
 .cat-card{
   background:var(--card);border:0.5px solid var(--border);
-  border-radius:var(--r);overflow:hidden;margin-bottom:10px;
+  border-radius:var(--r);overflow:visible;margin-bottom:10px;
 }
 .cat-card.has-selection{border-color:var(--accent-2)}
 .cat-header{
   padding:10px 12px 8px;border-bottom:0.5px solid var(--border);
   display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
 }
-.cat-name{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3}
+.cat-name{font-size:14px;font-weight:700;color:var(--ink);line-height:1.3}
 .cat-count{font-size:10px;color:var(--ink-3);margin-top:1px}
 .cat-selected-val{
   font-size:13px;font-weight:600;font-family:'DM Mono',monospace;
@@ -215,10 +215,10 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 .status-dropdown-btn .badge{cursor:pointer}
 .status-dropdown-btn svg{color:var(--ink-4);flex-shrink:0}
 .status-menu{
-  position:absolute;right:0;top:calc(100% + 4px);
+  position:fixed;
   background:var(--card);border:0.5px solid var(--border);
-  border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);
-  z-index:500;min-width:170px;overflow:hidden;
+  border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.18);
+  z-index:9999;min-width:170px;overflow:hidden;
   display:none;
 }
 .status-menu.open{display:block}
@@ -441,6 +441,12 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
   <div class="pane" id="pane-exportar">
     <div class="section-label">Nome da exportação</div>
     <input class="export-name-input" type="text" id="export-name" placeholder="Ex: Orçamento Final v1"/>
+
+    <div class="export-option">
+      <h3>📄 Exportar PDF — Planilha de Comparação</h3>
+      <p>Gera um PDF com toda a planilha de comparação, incluindo campo de observações. Os itens selecionados ficam destacados.</p>
+      <button class="btn btn-primary" id="btn-export-pdf">Exportar PDF</button>
+    </div>
 
     <div class="export-option">
       <h3>📋 Nova Aba — Resumo</h3>
@@ -988,7 +994,20 @@ function toggleStatusMenu(btn, rowIdx) {
   document.querySelectorAll('.status-menu.open').forEach(m => {
     if (m !== btn.nextElementSibling) m.classList.remove('open');
   });
-  btn.nextElementSibling.classList.toggle('open');
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  if (isOpen) { menu.classList.remove('open'); return; }
+
+  // Position fixed relative to button
+  const rect = btn.getBoundingClientRect();
+  menu.style.top  = (rect.bottom + 4) + 'px';
+  // Align right edge of menu to right edge of button, clamped to viewport
+  const menuWidth = 170;
+  let left = rect.right - menuWidth;
+  if (left < 4) left = 4;
+  menu.style.left = left + 'px';
+  menu.style.right = 'auto';
+  menu.classList.add('open');
 }
 
 // Close menus when clicking elsewhere
@@ -1330,6 +1349,152 @@ async function applyCleanBorders() {
     toast('Erro ao ajustar bordas: ' + e.message);
   }
 }
+// ════════════════════════════════════════════
+// EXPORT: PDF — Planilha de Comparação
+// ════════════════════════════════════════════
+document.getElementById('btn-export-pdf').addEventListener('click', () => {
+  const title = document.getElementById('export-name').value.trim() || 'Orçamento de Obra';
+  if (!sheetData.length) { toast('Nenhum dado carregado'); return; }
+
+  // Group by category
+  const groups = [];
+  const seenCats = {};
+  for (const item of sheetData) {
+    if (!seenCats[item.category]) {
+      seenCats[item.category] = [];
+      groups.push({ cat: item.category, items: seenCats[item.category] });
+    }
+    seenCats[item.category].push(item);
+  }
+
+  const minByCat = {};
+  for (const item of sheetData) {
+    if (item.value > 0) {
+      if (!minByCat[item.category] || item.value < minByCat[item.category])
+        minByCat[item.category] = item.value;
+    }
+  }
+
+  // Compute totals
+  let totalSel = 0, totalMin = 0, totalMax = 0;
+  for (const [, rowIdx] of Object.entries(selected)) {
+    const item = sheetData.find(i => i.row === rowIdx);
+    if (item) totalSel += item.value;
+  }
+  for (const g of groups) {
+    const vals = g.items.filter(i => i.value > 0).map(i => i.value);
+    if (vals.length) { totalMin += Math.min(...vals); totalMax += Math.max(...vals); }
+  }
+
+  // Build table rows HTML
+  let rowsHtml = '';
+  for (const { cat, items } of groups) {
+    items.forEach((item, idx) => {
+      const isSelected = selected[cat] === item.row;
+      const isBest = item.value > 0 && item.value === minByCat[cat];
+      const rowClass = isSelected ? 'row-selected' : '';
+      const valStr = item.value > 0 ? fmtBRL(item.value) : '—';
+      const catCell = idx === 0
+        ? `<td class="td-cat" rowspan="${items.length}">${cat}</td>`
+        : '';
+      rowsHtml += `
+        <tr class="${rowClass}">
+          <td class="td-sel">${isSelected ? '✓' : ''}</td>
+          ${catCell}
+          <td class="td-sup">${item.supplier}</td>
+          <td class="td-val${isBest ? ' td-best' : ''}">${valStr}</td>
+          <td class="td-status">${item.status || '—'}</td>
+          <td class="td-obs">${item.obs || ''}</td>
+        </tr>`;
+    });
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>${title}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'DM Sans',sans-serif;font-size:11px;color:#1A1A14;background:#fff;padding:24px 20px}
+  h1{font-size:17px;font-weight:700;color:#1C3A22;margin-bottom:2px}
+  .subtitle{font-size:10px;color:#8A8A78;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse;font-size:10.5px}
+  thead tr{background:#1C3A22;color:#fff}
+  thead th{padding:7px 8px;text-align:left;font-weight:600;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase}
+  tbody td{padding:6px 8px;border-bottom:0.5px solid #E8E4DC;vertical-align:top}
+  .td-cat{font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#1A1A14;vertical-align:middle;background:#F5F3EE;border-right:1px solid #E8E4DC}
+  .td-sel{text-align:center;color:#1C3A22;font-weight:700;width:18px}
+  .td-sup{font-weight:500;min-width:90px}
+  .td-val{font-family:'DM Mono',monospace;font-size:10.5px;white-space:nowrap;text-align:right;min-width:80px}
+  .td-best{color:#1C3A22;font-weight:600}
+  .td-status{font-size:10px;color:#4A4A3A;min-width:80px}
+  .td-obs{font-size:9.5px;color:#4A4A3A;line-height:1.5;min-width:100px}
+  .row-selected td{background:#EAF3DE !important}
+  .row-selected .td-cat{background:#D4EDCA !important}
+  .group-end td{border-bottom:1.5px solid #B0A898}
+  tfoot td{padding:7px 8px;font-weight:700;font-size:10.5px;background:#EAF3DE;color:#1C3A22}
+  tfoot .tf-label{font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .totals{margin-top:14px;display:flex;gap:16px}
+  .total-box{border:0.5px solid #E8E4DC;border-radius:6px;padding:8px 12px;min-width:130px}
+  .total-box .tbl{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#8A8A78;margin-bottom:3px}
+  .total-box .tbv{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:#1C3A22}
+  .total-box.sel{background:#EAF3DE;border-color:#2D6A4F}
+  .footer{margin-top:18px;font-size:9px;color:#C4C4B0;border-top:0.5px solid #E8E4DC;padding-top:8px}
+  @media print{body{padding:8px 6px}button{display:none}}
+</style>
+</head>
+<body>
+<h1>${title}</h1>
+<div class="subtitle">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+<table>
+  <colgroup>
+    <col style="width:18px">
+    <col style="width:110px">
+    <col style="width:auto">
+    <col style="width:90px">
+    <col style="width:90px">
+    <col style="width:140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>✓</th>
+      <th>Categoria</th>
+      <th>Fornecedor</th>
+      <th style="text-align:right">Valor</th>
+      <th>Status</th>
+      <th>Observações</th>
+    </tr>
+  </thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+<div class="totals">
+  <div class="total-box sel">
+    <div class="tbl">Total Selecionado</div>
+    <div class="tbv">${totalSel > 0 ? fmtBRL(totalSel) : '—'}</div>
+  </div>
+  <div class="total-box">
+    <div class="tbl">Mínimo Possível</div>
+    <div class="tbv">${totalMin > 0 ? fmtBRL(totalMin) : '—'}</div>
+  </div>
+  <div class="total-box">
+    <div class="tbl">Máximo Possível</div>
+    <div class="tbv">${totalMax > 0 ? fmtBRL(totalMax) : '—'}</div>
+  </div>
+</div>
+<div class="footer">Orçamento de Obra — Exportado pelo Add-in Excel</div>
+<script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) toast('Permita pop-ups para exportar o PDF');
+  else toast('Abrindo janela de impressão… ✓');
+});
+
 function str(v) {
   return v === null || v === undefined ? '' : String(v).trim();
 }
