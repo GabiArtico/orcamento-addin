@@ -162,29 +162,37 @@ body{
 .section-label:first-child{margin-top:0}
 
 /* ── COMPARE TABLE ── */
-.compare-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.compare-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+.compare-table col.col-radio   { width:26px }
+.compare-table col.col-cat     { width:110px }
+.compare-table col.col-sup     { width:auto }
+.compare-table col.col-val     { width:110px }
+.compare-table col.col-status  { width:148px }
 .compare-table th{
   text-align:left;padding:6px 8px;
   color:var(--ink-3);border-bottom:0.5px solid var(--border);
   font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  overflow:hidden;
 }
 .compare-table td{
   padding:8px 8px;border-bottom:0.5px solid var(--border);
+  overflow:hidden;
 }
 .compare-table tr:last-child td{border-bottom:none}
 .compare-table tr.cmp-selectable:hover td:not(.cat-cell):not(.td-radio){background:#F8F7F4;cursor:pointer}
 .compare-table tr.cmp-selected td:not(.cat-cell):not(.td-radio){background:var(--accent-light)}
 .compare-table td.cat-cell{background:transparent !important;cursor:default}
 .best-value{color:var(--accent);font-weight:600}
-/* Radio column — never show any border */
+/* Radio column */
 .compare-table td.td-radio{
   border-bottom:none !important;
-  padding-right:4px;width:22px;
+  padding:8px 4px 8px 8px;
 }
 .compare-table .cat-cell{
   font-size:10px;color:var(--ink);font-weight:700;
   text-transform:uppercase;letter-spacing:.03em;
-  vertical-align:middle;white-space:nowrap;width:1%;padding-right:14px;
+  vertical-align:middle;padding-right:10px;
+  word-break:break-word;line-height:1.3;
 }
 .compare-table td.cat-cell-first{
   vertical-align:middle;
@@ -408,9 +416,16 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
     <div class="section-label">Visão geral de valores — clique para selecionar</div>
     <div style="overflow-x:auto">
       <table class="compare-table" id="compare-table">
+        <colgroup>
+          <col class="col-radio">
+          <col class="col-cat">
+          <col class="col-sup">
+          <col class="col-val">
+          <col class="col-status">
+        </colgroup>
         <thead>
           <tr>
-            <th style="width:20px"></th>
+            <th></th>
             <th>Categoria</th>
             <th>Fornecedor</th>
             <th>Valor</th>
