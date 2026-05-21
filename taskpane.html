@@ -149,9 +149,9 @@ body{
   font-size:9px;font-weight:600;padding:2px 7px;
   border-radius:20px;white-space:nowrap;
 }
-.badge-green{background:#DCFCE7;color:#166534}
-.badge-yellow{background:#FEF9C3;color:#854D0E}
-.badge-gray{background:#F3F4F6;color:#4B5563}
+.badge-green{background:#BBF7D0;color:#14532D}
+.badge-yellow{background:#FDE68A;color:#78350F}
+.badge-gray{background:#D1D5DB;color:#1F2937}
 
 /* ── SECTION LABEL ── */
 .section-label{
@@ -162,22 +162,41 @@ body{
 .section-label:first-child{margin-top:0}
 
 /* ── COMPARE TABLE ── */
-.compare-table{width:100%;border-collapse:collapse;font-size:11px}
+.compare-table{width:100%;border-collapse:collapse;font-size:12.5px}
 .compare-table th{
   text-align:left;padding:6px 8px;
   color:var(--ink-3);border-bottom:0.5px solid var(--border);
-  font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
 }
 .compare-table td{
-  padding:7px 8px;border-bottom:0.5px solid var(--border);
+  padding:8px 8px;border-bottom:0.5px solid var(--border);
 }
 .compare-table tr:last-child td{border-bottom:none}
 .compare-table tr.cmp-selectable:hover td{background:#F8F7F4;cursor:pointer}
 .compare-table tr.cmp-selected td{background:var(--accent-light)}
 .best-value{color:var(--accent);font-weight:600}
 .compare-table .cat-cell{
-  font-size:9px;color:var(--ink-3);font-weight:600;
+  font-size:10px;color:var(--ink-3);font-weight:600;
   text-transform:uppercase;letter-spacing:.04em;
+  vertical-align:top;
+}
+/* Cat cell: rows that continue a group — no top border, no bottom border */
+.compare-table td.cat-cell-cont{
+  border-bottom:none;
+  border-top:none;
+}
+/* Last row of a group keeps the bottom border on non-cat cells */
+.compare-table tr.cat-last td:not(.cat-cell){
+  border-bottom:0.5px solid var(--border);
+}
+/* Inner rows of a group: no bottom border on non-cat cells */
+.compare-table tr.cat-inner td:not(.cat-cell){
+  border-bottom:0.5px solid var(--border);
+}
+/* First row of a group */
+.compare-table td.cat-cell-first{
+  padding-top:10px;
+  vertical-align:top;
 }
 /* radio in compare table */
 .cmp-radio{
@@ -843,25 +862,70 @@ function buildCompareTable() {
         minByCat[item.category] = item.value;
     }
   }
-  let prevCat = '';
-  for (const item of sheetData) {
-    const isBest = item.value > 0 && item.value === minByCat[item.category];
-    const isSelected = selected[item.category] === item.row;
-    const tr = document.createElement('tr');
-    tr.className = 'cmp-selectable' + (isSelected ? ' cmp-selected' : '');
-    tr.dataset.row = item.row;
-    tr.dataset.cat = item.category;
 
-    tr.innerHTML = `
-      <td style="padding-right:4px">
-        <div class="cmp-radio"><div class="cmp-radio-dot"></div></div>
-      </td>
-      <td class="cat-cell">${item.category !== prevCat ? item.category : ''}</td>
-      <td style="font-weight:500">${item.supplier}</td>
-      <td class="${isBest ? 'best-value' : ''}" style="font-family:'DM Mono',monospace">
-        ${item.value > 0 ? fmtBRL(item.value) : '—'}
-      </td>
-      <td>
+  // Group items by category preserving order
+  const groups = [];
+  const seenCats = {};
+  for (const item of sheetData) {
+    if (!seenCats[item.category]) {
+      seenCats[item.category] = [];
+      groups.push({ cat: item.category, items: seenCats[item.category] });
+    }
+    seenCats[item.category].push(item);
+  }
+
+  for (const group of groups) {
+    const { cat, items } = group;
+    const span = items.length;
+
+    items.forEach((item, idx) => {
+      const isBest     = item.value > 0 && item.value === minByCat[cat];
+      const isSelected = selected[cat] === item.row;
+      const isFirst    = idx === 0;
+      const isLast     = idx === span - 1;
+
+      const tr = document.createElement('tr');
+      tr.className = 'cmp-selectable' + (isSelected ? ' cmp-selected' : '');
+      tr.dataset.row = item.row;
+      tr.dataset.cat = cat;
+
+      // Radio cell
+      const tdRadio = document.createElement('td');
+      tdRadio.style.cssText = 'padding-right:4px;width:22px';
+      tdRadio.innerHTML = `<div class="cmp-radio"><div class="cmp-radio-dot"></div></div>`;
+      tr.appendChild(tdRadio);
+
+      // Category cell — only on first row, with rowspan
+      if (isFirst) {
+        const tdCat = document.createElement('td');
+        tdCat.className = 'cat-cell cat-cell-first';
+        tdCat.rowSpan = span;
+        // No bottom border on cat cell — it spans multiple rows
+        tdCat.style.cssText = `border-bottom:${span > 1 ? '0.5px solid var(--border)' : '0.5px solid var(--border)'};vertical-align:middle`;
+        tdCat.textContent = cat;
+        tr.appendChild(tdCat);
+      }
+
+      // Supplier
+      const tdSup = document.createElement('td');
+      tdSup.style.cssText = 'font-weight:500';
+      // Remove bottom border on inner rows (not last)
+      if (!isLast) tdSup.style.borderBottom = '0.5px solid #F0EDE6';
+      tdSup.textContent = item.supplier;
+      tr.appendChild(tdSup);
+
+      // Value
+      const tdVal = document.createElement('td');
+      tdVal.className = isBest ? 'best-value' : '';
+      tdVal.style.cssText = `font-family:'DM Mono',monospace`;
+      if (!isLast) tdVal.style.borderBottom = '0.5px solid #F0EDE6';
+      tdVal.textContent = item.value > 0 ? fmtBRL(item.value) : '—';
+      tr.appendChild(tdVal);
+
+      // Status dropdown
+      const tdStatus = document.createElement('td');
+      if (!isLast) tdStatus.style.borderBottom = '0.5px solid #F0EDE6';
+      tdStatus.innerHTML = `
         <div class="status-dropdown-wrap" data-row="${item.row}">
           <button class="status-dropdown-btn" onclick="event.stopPropagation();toggleStatusMenu(this, ${item.row})">
             <span class="badge ${statusClass(item.status)}">${item.status || '—'}</span>
@@ -882,30 +946,26 @@ function buildCompareTable() {
             </div>
           </div>
         </div>
-      </td>
-    `;
+      `;
+      tr.appendChild(tdStatus);
 
-    tr.addEventListener('click', (e) => {
-      if (e.target.closest('.status-dropdown-wrap')) return;
-      const rowEl = document.querySelector(`.option-row[data-row="${item.row}"]`);
-      if (rowEl) {
-        toggleSelect(item, rowEl);
-      } else {
-        // Select directly if option-row not rendered
-        const cat = item.category;
-        if (selected[cat] === item.row) {
-          delete selected[cat];
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('.status-dropdown-wrap')) return;
+        const rowEl = document.querySelector(`.option-row[data-row="${item.row}"]`);
+        if (rowEl) {
+          toggleSelect(item, rowEl);
         } else {
-          selected[cat] = item.row;
+          const c = item.category;
+          if (selected[c] === item.row) delete selected[c];
+          else selected[c] = item.row;
+          updateCatHeader(c);
+          updateTotal();
         }
-        updateCatHeader(cat);
-        updateTotal();
-      }
-      buildCompareTable();
-    });
+        buildCompareTable();
+      });
 
-    tbody.appendChild(tr);
-    prevCat = item.category;
+      tbody.appendChild(tr);
+    });
   }
 }
 
