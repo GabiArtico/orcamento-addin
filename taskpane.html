@@ -413,7 +413,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 
   <!-- PANE: COMPARAR -->
   <div class="pane" id="pane-comparar">
-    <div class="section-label">Visão geral de valores — clique para selecionar</div>
+    <div class="section-label">Visão geral de valores — clique para selecionar <span style="float:right;font-size:9px;color:var(--ink-4);font-weight:400;letter-spacing:0">V04</span></div>
     <div style="overflow-x:auto">
       <table class="compare-table" id="compare-table">
         <colgroup>
@@ -909,6 +909,7 @@ function buildCompareTable() {
         // Cat cell border matches the group separator (darker)
         tdCat.style.cssText = `border-bottom:1px solid #B0A898;vertical-align:middle;cursor:default`;
         tdCat.addEventListener('click', e => e.stopPropagation());
+        tdCat.textContent = cat;
         tr.appendChild(tdCat);
       }
 
