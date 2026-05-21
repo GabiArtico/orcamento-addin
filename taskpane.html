@@ -434,6 +434,12 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
       <p>Remove todas as seleções feitas nesta sessão.</p>
       <button class="btn btn-danger" id="btn-clear">Limpar Tudo</button>
     </div>
+
+    <div class="export-option">
+      <h3>✨ Aplicar Estilo Clean</h3>
+      <p>Remove bordas verticais da planilha, mantendo apenas as horizontais para uma aparência mais limpa.</p>
+      <button class="btn btn-secondary" id="btn-clean-borders">Aplicar Bordas Clean</button>
+    </div>
   </div>
 
 </div><!-- #app -->
@@ -691,8 +697,10 @@ async function loadSheet() {
       }
       showApp();
       buildUI();
-      await applyCleanBorders(ctx, sheet, vals.length);
+      await ctx.sync();
     });
+    // Apply clean borders after data is loaded
+    await applyCleanBorders();
   } catch(err) {
     console.error(err);
     showError(err.message);
@@ -1166,6 +1174,13 @@ document.getElementById('btn-clear').addEventListener('click', async () => {
 });
 
 // ════════════════════════════════════════════
+// CLEAN BORDERS BUTTON
+// ════════════════════════════════════════════
+document.getElementById('btn-clean-borders').addEventListener('click', async () => {
+  await applyCleanBorders();
+});
+
+// ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
 document.querySelectorAll('.tab').forEach(tab => {
@@ -1210,29 +1225,38 @@ function shortStatus(s) {
 // ════════════════════════════════════════════
 // CLEAN BORDERS — remove vertical, keep horizontal
 // ════════════════════════════════════════════
-async function applyCleanBorders(ctx, sheet, rowCount) {
+async function applyCleanBorders() {
   try {
-    const dataRange = sheet.getRangeByIndexes(0, 0, rowCount, 15);
-    // Remove all vertical borders
-    const verticals = [
-      Excel.BorderIndex.insideVertical,
-      Excel.BorderIndex.edgeLeft,
-      Excel.BorderIndex.edgeRight,
-    ];
-    for (const border of verticals) {
-      dataRange.format.borders.getItem(border).style = Excel.BorderLineStyle.none;
-    }
-    // Keep horizontal borders (thin, subtle color)
-    dataRange.format.borders.getItem(Excel.BorderIndex.insideHorizontal).style = Excel.BorderLineStyle.continuous;
-    dataRange.format.borders.getItem(Excel.BorderIndex.insideHorizontal).color = '#D6D0C4';
-    dataRange.format.borders.getItem(Excel.BorderIndex.insideHorizontal).weight = Excel.BorderWeight.thin;
-    // Remove top/bottom outer borders
-    dataRange.format.borders.getItem(Excel.BorderIndex.edgeTop).style = Excel.BorderLineStyle.none;
-    dataRange.format.borders.getItem(Excel.BorderIndex.edgeBottom).style = Excel.BorderLineStyle.none;
-    await ctx.sync();
+    await Excel.run(async (ctx) => {
+      let sheet;
+      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
+
+      const used = sheet.getUsedRange();
+      used.load('rowCount,columnCount');
+      await ctx.sync();
+
+      const rows = used.rowCount;
+      const cols = used.columnCount;
+
+      // Full range: remove ALL vertical borders in one pass
+      const full = sheet.getRangeByIndexes(0, 0, rows, cols);
+      full.format.borders.getItem(Excel.BorderIndex.insideVertical).style = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeLeft).style       = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeRight).style      = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeTop).style        = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeBottom).style     = Excel.BorderLineStyle.none;
+      // Add subtle horizontal lines between rows
+      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).style  = Excel.BorderLineStyle.continuous;
+      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).color  = '#D6D0C4';
+      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).weight = Excel.BorderWeight.thin;
+
+      await ctx.sync();
+      toast('Bordas ajustadas ✓');
+    });
   } catch(e) {
-    // Non-critical — ignore border errors silently
-    console.warn('Border styling skipped:', e.message);
+    console.warn('Border styling error:', e.message);
+    toast('Erro ao ajustar bordas: ' + e.message);
   }
 }
 function str(v) {
