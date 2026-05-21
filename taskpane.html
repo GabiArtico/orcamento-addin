@@ -456,19 +456,41 @@ body{
 
 <script>
 // ════════════════════════════════════════════
-// COLUMN MAP — ajuste se necessário
-// Índice base 0: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9
+// COLUMN MAP — detectado dinamicamente via linha 4
+// Fallbacks usados apenas se o cabeçalho não for encontrado
 // ════════════════════════════════════════════
-const COL_CAT      = 1;   // B — Categoria
-const COL_SUPPLIER = 3;   // D — Fornecedor
-const COL_VALUE    = 5;   // F — Valor
-const COL_STATUS   = 7;   // H — Status
-const COL_OBS      = 9;   // J — Observações
+let COL_CAT      = 1;   // B — Categoria
+let COL_SUPPLIER = 3;   // D — Fornecedor
+let COL_VALUE    = 5;   // F — Valor
+let COL_STATUS   = 7;   // H — Status
+let COL_OBS      = 9;   // J — Observações
 
-const SKIP_CAT_WORDS = ['VALOR','ANTIGO','OBSERV','STATUS','RESUMO','TOTAL',
-                        'CATEGORIA','FORNECEDOR','COLISEU','RECEBIDO',
-                        'AGUARDANDO','SOLICITADO','DATA'];
+// Palavras-chave para identificar cada coluna no cabeçalho (linha 4)
+const HEADER_KEYWORDS = {
+  cat:      ['CATEG','ITEM','TIPO','PRODUTO','SERVIÇO','SERVICO'],
+  supplier: ['FORN','EMPRESA','PRESTA','LOJA'],
+  value:    ['VALOR','PREÇO','PRECO','TOTAL','R$'],
+  status:   ['STATUS','SITUAÇÃO','SITUACAO','ESTADO'],
+  obs:      ['OBS','NOTA','DESCR','DETALHE','INCLUI','COMENTARIO','COMENTÁRIO'],
+};
+
 const STATUS_KEYWORDS = ['RECEBIDO','AGUARDANDO','NÃO SOLICITADO','NAO SOLICITADO','NÃO SOLIC'];
+
+// Detecta colunas a partir da linha de cabeçalho
+function detectColumns(headerRow) {
+  const found = {};
+  headerRow.forEach((cell, idx) => {
+    const val = String(cell).toUpperCase().trim();
+    if (!val) return;
+    for (const [key, keywords] of Object.entries(HEADER_KEYWORDS)) {
+      if (found[key] != null) continue; // já achou
+      if (keywords.some(k => val.includes(k))) {
+        found[key] = idx;
+      }
+    }
+  });
+  return found;
+}
 
 // ════════════════════════════════════════════
 // STATE
@@ -511,40 +533,70 @@ async function loadSheet() {
       const vals = range.values;
       sheetData = []; diagLines = [];
       diagLines.push(`Aba: "${sheet.name}" | Linhas: ${vals.length} | Cols: ${vals[0]?.length}`);
-      diagLines.push(`B(${COL_CAT}) Cat | D(${COL_SUPPLIER}) Forn | F(${COL_VALUE}) Val | H(${COL_STATUS}) Status`);
+
+      // ── Detecta linha de cabeçalho (linha 4 = índice 3, mas busca nas primeiras 8 linhas) ──
+      let headerRowIdx = -1;
+      for (let r = 0; r < Math.min(8, vals.length); r++) {
+        const rowUp = vals[r].map(c => String(c).toUpperCase());
+        const hasSupplier = HEADER_KEYWORDS.supplier.some(k => rowUp.some(c => c.includes(k)));
+        const hasStatus   = HEADER_KEYWORDS.status.some(k => rowUp.some(c => c.includes(k)));
+        if (hasSupplier && hasStatus) { headerRowIdx = r; break; }
+      }
+
+      if (headerRowIdx >= 0) {
+        const detected = detectColumns(vals[headerRowIdx]);
+        if (detected.cat      != null) COL_CAT      = detected.cat;
+        if (detected.supplier != null) COL_SUPPLIER = detected.supplier;
+        if (detected.value    != null) COL_VALUE    = detected.value;
+        if (detected.status   != null) COL_STATUS   = detected.status;
+        if (detected.obs      != null) COL_OBS      = detected.obs;
+        diagLines.push(`Cabeçalho detectado na linha ${headerRowIdx+1}`);
+      } else {
+        diagLines.push(`Cabeçalho não encontrado — usando colunas padrão (B,D,F,H,J)`);
+        headerRowIdx = 3; // assume linha 4 como cabeçalho padrão
+      }
+
+      diagLines.push(`Cols: Cat=${COL_CAT} Forn=${COL_SUPPLIER} Val=${COL_VALUE} Status=${COL_STATUS} Obs=${COL_OBS}`);
       diagLines.push('─'.repeat(50));
 
+      // ── Lê as linhas de dados (tudo abaixo do cabeçalho) ──
+      // A categoria vem diretamente da coluna Cat de cada linha.
+      // Se a célula de categoria estiver vazia, herda a última categoria vista.
       let lastCategory = '', found = 0;
-      for (let r = 0; r < vals.length; r++) {
+      for (let r = headerRowIdx + 1; r < vals.length; r++) {
         const row = vals[r];
         const maxCol = row.length;
+
         const rawCat      = maxCol > COL_CAT      ? str(row[COL_CAT])      : '';
         const rawSupplier = maxCol > COL_SUPPLIER  ? str(row[COL_SUPPLIER]) : '';
         const rawValue    = maxCol > COL_VALUE     ? row[COL_VALUE]         : '';
         const rawStatus   = maxCol > COL_STATUS    ? str(row[COL_STATUS])   : '';
         const rawObs      = maxCol > COL_OBS       ? str(row[COL_OBS])      : '';
 
-        if (rawCat.length > 1 && !SKIP_CAT_WORDS.some(w => rawCat.toUpperCase().includes(w))) {
+        // Atualiza categoria se a célula tiver conteúdo
+        if (rawCat.length > 1) {
           if (rawCat !== lastCategory) {
             lastCategory = rawCat;
             diagLines.push(`[L${r+1}] 📁 Cat → "${lastCategory}"`);
           }
         }
+
+        // Só processa linhas que tenham um status reconhecido
         const statusUp = rawStatus.toUpperCase();
         const hasStatus = STATUS_KEYWORDS.some(k => statusUp.includes(k));
         if (!hasStatus) continue;
 
-        let supplier = rawSupplier;
-        if (!supplier || supplier.length < 2)
-          supplier = maxCol > 2 ? str(row[2]) : '';
+        // Fornecedor obrigatório
+        const supplier = rawSupplier;
         if (!supplier || supplier.length < 2) {
           diagLines.push(`[L${r+1}] ⚠️ Status "${rawStatus}" sem fornecedor`);
           continue;
         }
+
         found++;
         diagLines.push(`[L${r+1}] ✅ "${supplier}" | "${lastCategory||'?'}" | "${rawValue}"`);
         sheetData.push({
-          row: r, category: lastCategory || 'OUTROS',
+          row: r, category: lastCategory || 'SEM CATEGORIA',
           supplier, value: parseValue(rawValue),
           rawValue, status: rawStatus, obs: rawObs
         });
@@ -553,13 +605,13 @@ async function loadSheet() {
       diagLines.push(`Total: ${found} linhas`);
 
       if (sheetData.length === 0) {
-        const sample = vals.slice(0,6).map((r,i)=>
-          `L${i+1}: ${r.slice(0,8).map(c=>String(c).substring(0,10)).join(' | ')}`
+        const sample = vals.slice(0, 6).map((r, i) =>
+          `L${i+1}: ${r.slice(0, 8).map(c => String(c).substring(0, 12)).join(' | ')}`
         ).join('\n');
         throw new Error(
           `Nenhuma linha com status válido encontrada.\n\nAmostra:\n${sample}\n\n` +
-          `Esperado na coluna H: RECEBIDO, AGUARDANDO ou NÃO SOLICITADO.\n` +
-          `Colunas: B=Categoria, D=Fornecedor, F=Valor, H=Status, J=Obs\n\n` +
+          `Verifique se a coluna de Status contém: RECEBIDO, AGUARDANDO ou NÃO SOLICITADO.\n` +
+          `Certifique-se de que a linha 4 contém os títulos das colunas.\n\n` +
           `Abra o diagnóstico para mais detalhes.`
         );
       }
