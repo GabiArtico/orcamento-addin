@@ -48,7 +48,7 @@ body{
   display:flex;align-items:center;gap:10px;
 }
 .header-brand{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
-.header-brand svg{flex-shrink:0;opacity:.85}
+.header-brand svg{flex-shrink:0;opacity:.85;cursor:pointer}
 .header-title{
   font-size:14px;font-weight:600;letter-spacing:-.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -78,9 +78,33 @@ body{
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-light)}
 .tab:hover:not(.active){color:var(--ink-2);background:var(--surface)}
 
+/* ── SEARCH BAR ── */
+.search-wrap{
+  padding:10px 12px 6px;
+  position:sticky;top:0;background:var(--surface);z-index:10;
+}
+.search-input{
+  width:100%;border:0.5px solid var(--border);border-radius:8px;
+  padding:7px 10px 7px 30px;font-size:12px;font-family:'DM Sans',sans-serif;
+  color:var(--ink);background:var(--card);outline:none;
+  transition:border-color .15s;
+}
+.search-input:focus{border-color:var(--accent-2)}
+.search-wrap-inner{position:relative}
+.search-icon{
+  position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:var(--ink-4);
+}
+.search-empty{
+  text-align:center;padding:24px 16px;
+  font-size:12px;color:var(--ink-3);
+}
+
 /* ── PANES ── */
 .pane{display:none;flex:1;overflow-y:auto;padding:12px;padding-bottom:64px}
 .pane.active{display:block}
+#pane-selecionar{padding:0;padding-bottom:64px}
+.pane-inner{padding:0 12px 12px}
 
 /* ── CATEGORY CARDS ── */
 .cat-card{
@@ -88,6 +112,7 @@ body{
   border-radius:var(--r);overflow:visible;margin-bottom:10px;
 }
 .cat-card.has-selection{border-color:var(--accent-2)}
+.cat-card.hidden{display:none}
 .cat-header{
   padding:10px 12px 8px;border-bottom:0.5px solid var(--border);
   display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
@@ -164,10 +189,10 @@ body{
 /* ── COMPARE TABLE ── */
 .compare-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 .compare-table col.col-radio   { width:26px }
-.compare-table col.col-cat     { width:110px }
+.compare-table col.col-cat     { width:100px }
 .compare-table col.col-sup     { width:auto }
-.compare-table col.col-val     { width:110px }
-.compare-table col.col-status  { width:148px }
+.compare-table col.col-val     { width:120px }
+.compare-table col.col-status  { width:140px }
 .compare-table th{
   text-align:left;padding:6px 8px;
   color:var(--ink-3);border-bottom:0.5px solid var(--border);
@@ -183,6 +208,7 @@ body{
 .compare-table tr.cmp-selected td:not(.cat-cell):not(.td-radio){background:var(--accent-light)}
 .compare-table td.cat-cell{background:transparent !important;cursor:default}
 .best-value{color:var(--accent);font-weight:600}
+.val-diff{font-size:10px;color:var(--ink-4);font-family:'DM Mono',monospace;margin-top:2px}
 /* Radio column */
 .compare-table td.td-radio{
   border-bottom:none !important;
@@ -194,9 +220,7 @@ body{
   vertical-align:middle;padding-right:10px;
   word-break:break-word;line-height:1.3;
 }
-.compare-table td.cat-cell-first{
-  vertical-align:middle;
-}
+.compare-table td.cat-cell-first{vertical-align:middle}
 /* radio in compare table */
 .cmp-radio{
   width:14px;height:14px;border-radius:50%;
@@ -261,6 +285,22 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 }
 .export-name-input:focus{border-color:var(--accent-2)}
 
+/* ── CONFIRM DIALOG ── */
+#confirm-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  z-index:500;display:none;align-items:flex-end;justify-content:center;
+}
+#confirm-overlay.open{display:flex}
+.confirm-box{
+  background:var(--card);border-radius:14px 14px 0 0;
+  padding:20px 16px 24px;width:100%;max-width:380px;
+  box-shadow:0 -4px 24px rgba(0,0,0,.15);
+}
+.confirm-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.confirm-msg{font-size:12px;color:var(--ink-3);line-height:1.55;margin-bottom:16px}
+.confirm-actions{display:flex;gap:8px}
+.confirm-actions .btn{flex:1}
+
 /* ── DETAIL PANEL (slide-up overlay) ── */
 #detailPanel{
   position:fixed;inset:0;
@@ -295,6 +335,22 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 .dp-val-nodata{font-size:13px;color:var(--ink-4);font-style:italic}
 .dp-obs-text{font-size:13px;color:var(--ink-2);line-height:1.65;white-space:pre-wrap}
 .dp-obs-empty{font-size:13px;color:var(--ink-4);font-style:italic}
+
+/* editable obs */
+.dp-obs-edit{
+  width:100%;min-height:80px;border:0.5px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;
+  color:var(--ink-2);background:var(--card);resize:vertical;outline:none;
+  transition:border-color .15s;line-height:1.6;
+}
+.dp-obs-edit:focus{border-color:var(--accent-2)}
+.dp-save-obs{
+  margin-top:8px;padding:7px 14px;background:var(--accent);color:#fff;
+  border:none;border-radius:7px;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:background .15s;
+}
+.dp-save-obs:hover{background:var(--accent-2)}
+
 .dp-footer{
   padding:12px 14px;border-top:0.5px solid var(--border);
   flex-shrink:0;background:var(--card);
@@ -314,15 +370,16 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 .total-bar{
   position:fixed;bottom:0;left:0;right:0;
   background:var(--accent);color:#fff;
-  padding:10px 14px;
+  padding:8px 14px 10px;
   display:flex;justify-content:space-between;align-items:center;
   z-index:90;flex-shrink:0;
 }
 .total-bar .t-left{display:flex;flex-direction:column}
 .total-bar .t-label{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1px}
-.total-bar .t-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-.02em}
-.total-bar .t-right{display:flex;gap:12px;align-items:center}
-.total-pill{background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.18);border-radius:8px;padding:5px 10px;text-align:center}
+.total-bar .t-val{font-size:17px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-.02em}
+.total-bar .t-progress{font-size:9px;opacity:.55;margin-top:2px;letter-spacing:.02em}
+.total-bar .t-right{display:flex;gap:8px;align-items:center}
+.total-pill{background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.18);border-radius:8px;padding:5px 8px;text-align:center}
 .total-pill .p-label{font-size:8px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
 .total-pill .p-val{font-size:11px;font-weight:600;font-family:'DM Mono',monospace}
 .total-pill .p-val.up{color:#86EFAC}
@@ -330,7 +387,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 
 /* ── TOAST ── */
 #toast{
-  position:fixed;bottom:58px;left:50%;
+  position:fixed;bottom:62px;left:50%;
   transform:translateX(-50%) translateY(12px);
   background:var(--accent);color:#fff;
   padding:8px 16px;border-radius:10px;
@@ -340,7 +397,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ── DIAGNOSTIC ── */
+/* ── DIAGNOSTIC (hidden by default) ── */
 #diag-panel{
   background:var(--warn-light);border:0.5px solid #E8C97A;
   border-radius:8px;padding:10px;margin-bottom:10px;
@@ -349,10 +406,6 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
   white-space:pre-wrap;word-break:break-all;
 }
 #diag-panel.visible{display:block}
-#diag-toggle{
-  font-size:10px;color:var(--ink-4);cursor:pointer;
-  text-decoration:underline;margin-bottom:8px;display:inline-block;
-}
 
 /* ── EMPTY STATE ── */
 .empty{text-align:center;padding:32px 16px;color:var(--ink-3)}
@@ -376,12 +429,13 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;height:100%;display:none;flex-direction:column">
+<div id="app" style="display:none;flex-direction:column;height:100%">
 
   <!-- HEADER -->
   <header class="header">
     <div class="header-brand">
-      <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+      <!-- Triple-click no ícone abre diagnóstico -->
+      <svg id="header-icon" width="24" height="24" viewBox="0 0 28 28" fill="none" title="Orçamento Add-in">
         <rect width="28" height="28" rx="7" fill="rgba(255,255,255,0.12)"/>
         <path d="M7 14l5 5 9-10" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -406,14 +460,24 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 
   <!-- PANE: SELECIONAR -->
   <div class="pane active" id="pane-selecionar">
-    <span id="diag-toggle" onclick="toggleDiag()">🔍 diagnóstico</span>
-    <div id="diag-panel"></div>
-    <div id="supplier-list"></div>
+    <!-- Search bar sticky no topo -->
+    <div class="search-wrap">
+      <div class="search-wrap-inner">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="search-input" type="text" id="search-input" placeholder="Buscar categoria ou fornecedor…" oninput="filterCards(this.value)">
+      </div>
+    </div>
+    <div class="pane-inner">
+      <div id="diag-panel"></div>
+      <div id="supplier-list"></div>
+    </div>
   </div>
 
   <!-- PANE: COMPARAR -->
   <div class="pane" id="pane-comparar">
-    <div class="section-label">Visão geral de valores — clique para selecionar <span style="float:right;font-size:9px;color:var(--ink-4);font-weight:400;letter-spacing:0">V04</span></div>
+    <div class="section-label">Visão geral de valores — clique para selecionar <span style="float:right;font-size:9px;color:var(--ink-4);font-weight:400;letter-spacing:0">V05</span></div>
     <div style="overflow-x:auto">
       <table class="compare-table" id="compare-table">
         <colgroup>
@@ -444,7 +508,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 
     <div class="export-option">
       <h3>📄 Exportar PDF — Planilha de Comparação</h3>
-      <p>Gera um PDF com toda a planilha de comparação, incluindo campo de observações. Os itens selecionados ficam destacados.</p>
+      <p>Gera um PDF com toda a planilha de comparação. Os itens selecionados ficam destacados.</p>
       <button class="btn btn-primary" id="btn-export-pdf">Exportar PDF</button>
     </div>
 
@@ -461,15 +525,15 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
     </div>
 
     <div class="export-option">
-      <h3>🔄 Limpar Seleções</h3>
-      <p>Remove todas as seleções feitas nesta sessão.</p>
-      <button class="btn btn-danger" id="btn-clear">Limpar Tudo</button>
+      <h3>✨ Aplicar Estilo Clean</h3>
+      <p>Remove bordas verticais da planilha, mantendo apenas as horizontais.</p>
+      <button class="btn btn-secondary" id="btn-clean-borders">Aplicar Bordas Clean</button>
     </div>
 
     <div class="export-option">
-      <h3>✨ Aplicar Estilo Clean</h3>
-      <p>Remove bordas verticais da planilha, mantendo apenas as horizontais para uma aparência mais limpa.</p>
-      <button class="btn btn-secondary" id="btn-clean-borders">Aplicar Bordas Clean</button>
+      <h3>🔄 Limpar Seleções</h3>
+      <p>Remove todas as seleções feitas nesta sessão.</p>
+      <button class="btn btn-danger" id="btn-clear">Limpar Tudo</button>
     </div>
   </div>
 
@@ -495,7 +559,8 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
     </div>
     <div class="dp-section">
       <div class="dp-label">Observações / O que inclui</div>
-      <div id="dpObs"></div>
+      <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Nenhuma observação…"></textarea>
+      <button class="dp-save-obs" onclick="saveObs()">Salvar observação</button>
     </div>
   </div>
   <div class="dp-footer">
@@ -509,6 +574,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
   <div class="t-left">
     <div class="t-label">Total selecionado</div>
     <div class="t-val" id="total-value">R$&nbsp;0</div>
+    <div class="t-progress" id="total-progress">0 de 0 categorias</div>
   </div>
   <div class="t-right">
     <div class="total-pill">
@@ -525,18 +591,28 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- CONFIRM DIALOG -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Confirmar ação</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ════════════════════════════════════════════
-// COLUMN MAP — detectado dinamicamente via linha 4
-// Fallbacks usados apenas se o cabeçalho não for encontrado
+// COLUMN MAP — detectado dinamicamente via linha de cabeçalho
 // ════════════════════════════════════════════
-let COL_CAT      = 1;   // B — Categoria
-let COL_SUPPLIER = 3;   // D — Fornecedor
-let COL_VALUE    = 5;   // F — Valor
-let COL_STATUS   = 7;   // H — Status
-let COL_OBS      = 9;   // J — Observações
+let COL_CAT      = 1;
+let COL_SUPPLIER = 3;
+let COL_VALUE    = 5;
+let COL_STATUS   = 7;
+let COL_OBS      = 9;
 
-// Palavras-chave para identificar cada coluna no cabeçalho (linha 4)
 const HEADER_KEYWORDS = {
   cat:      ['CATEG','ITEM','TIPO','PRODUTO','SERVIÇO','SERVICO'],
   supplier: ['FORN','EMPRESA','PRESTA','LOJA'],
@@ -547,17 +623,14 @@ const HEADER_KEYWORDS = {
 
 const STATUS_KEYWORDS = ['RECEBIDO','AGUARDANDO','NÃO SOLICITADO','NAO SOLICITADO','NÃO SOLIC','EM ANÁLISE','EM ANALISE'];
 
-// Detecta colunas a partir da linha de cabeçalho
 function detectColumns(headerRow) {
   const found = {};
   headerRow.forEach((cell, idx) => {
     const val = String(cell).toUpperCase().trim();
     if (!val) return;
     for (const [key, keywords] of Object.entries(HEADER_KEYWORDS)) {
-      if (found[key] != null) continue; // já achou
-      if (keywords.some(k => val.includes(k))) {
-        found[key] = idx;
-      }
+      if (found[key] != null) continue;
+      if (keywords.some(k => val.includes(k))) found[key] = idx;
     }
   });
   return found;
@@ -569,7 +642,21 @@ function detectColumns(headerRow) {
 let sheetData  = [];
 let selected   = {};   // { category: rowIndex }
 let diagLines  = [];
-let panelItem  = null; // item currently shown in detail panel
+let panelItem  = null;
+
+// ════════════════════════════════════════════
+// DIAGNOSTIC — triplo clique no ícone do header
+// ════════════════════════════════════════════
+let diagClickCount = 0, diagClickTimer = null;
+document.getElementById('header-icon').addEventListener('click', () => {
+  diagClickCount++;
+  clearTimeout(diagClickTimer);
+  diagClickTimer = setTimeout(() => { diagClickCount = 0; }, 600);
+  if (diagClickCount >= 3) {
+    diagClickCount = 0;
+    document.getElementById('diag-panel').classList.toggle('visible');
+  }
+});
 
 // ════════════════════════════════════════════
 // OFFICE INIT
@@ -578,12 +665,36 @@ Office.onReady(async (info) => {
   if (info.host === Office.HostType.Excel) {
     await loadSheet();
   } else {
-    // Fora do Excel: carrega demo
     document.getElementById('loading').style.display = 'none';
     showApp();
     loadDemoData();
   }
 });
+
+// ════════════════════════════════════════════
+// PERSIST SELECTIONS — Office Document Settings
+// ════════════════════════════════════════════
+function saveSelections() {
+  try {
+    Office.context.document.settings.set('orcamento_selections', JSON.stringify(selected));
+    Office.context.document.settings.saveAsync();
+  } catch(e) { /* silencioso */ }
+}
+
+function loadSelections() {
+  try {
+    const raw = Office.context.document.settings.get('orcamento_selections');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Valida que os índices ainda existem nos dados atuais
+      for (const [cat, rowIdx] of Object.entries(parsed)) {
+        if (sheetData.some(i => i.row === rowIdx && i.category === cat)) {
+          selected[cat] = rowIdx;
+        }
+      }
+    }
+  } catch(e) { /* silencioso */ }
+}
 
 // ════════════════════════════════════════════
 // LOAD FROM EXCEL
@@ -605,8 +716,6 @@ async function loadSheet() {
       sheetData = []; diagLines = [];
       diagLines.push(`Aba: "${sheet.name}" | Linhas: ${vals.length} | Cols: ${vals[0]?.length}`);
 
-      // ── Detecta linha de cabeçalho (busca nas primeiras 8 linhas) ──
-      // Aceita se achar ao menos a coluna de Status OU Fornecedor
       let headerRowIdx = -1;
       for (let r = 0; r < Math.min(8, vals.length); r++) {
         const rowUp = vals[r].map(c => String(c).toUpperCase());
@@ -627,10 +736,8 @@ async function loadSheet() {
         if (detected.obs      != null) COL_OBS      = detected.obs;
         diagLines.push(`Cabeçalho detectado na linha ${headerRowIdx+1}`);
       } else {
-        // Cabeçalho não encontrado — detecta coluna de Status varrendo os dados
         diagLines.push(`Cabeçalho não encontrado — detectando Status automaticamente`);
-        headerRowIdx = 3; // começa a ler dados a partir da linha 5
-        // Descobre em qual coluna aparece RECEBIDO/AGUARDANDO
+        headerRowIdx = 3;
         outer: for (let r = headerRowIdx + 1; r < Math.min(headerRowIdx + 20, vals.length); r++) {
           const row = vals[r];
           for (let c = 0; c < row.length; c++) {
@@ -638,8 +745,6 @@ async function loadSheet() {
             if (STATUS_KEYWORDS.some(k => v.includes(k))) {
               COL_STATUS = c;
               diagLines.push(`Status detectado na coluna ${c} (linha ${r+1})`);
-              // Fornecedor provavelmente na coluna imediatamente antes do status
-              // mas vamos manter o padrão D (índice 3) a menos que seja óbvio
               break outer;
             }
           }
@@ -649,21 +754,14 @@ async function loadSheet() {
       diagLines.push(`Cols: Cat=${COL_CAT} Forn=${COL_SUPPLIER} Val=${COL_VALUE} Status=${COL_STATUS} Obs=${COL_OBS}`);
       diagLines.push('─'.repeat(50));
 
-      // ── Lê as linhas de dados (tudo abaixo do cabeçalho) ──
-      // Categoria: varre COL_CAT e a coluna seguinte (células mescladas/deslocadas)
-      // Fornecedor: varre COL_SUPPLIER e colunas vizinhas se necessário
-      // Se a célula estiver vazia, herda a última categoria vista.
       let lastCategory = '', found = 0;
       for (let r = headerRowIdx + 1; r < vals.length; r++) {
         const row = vals[r];
         const maxCol = row.length;
 
-        // Categoria: tenta COL_CAT, depois COL_CAT+1
         let rawCat = maxCol > COL_CAT ? str(row[COL_CAT]) : '';
         if (!rawCat && maxCol > COL_CAT + 1) rawCat = str(row[COL_CAT + 1]);
 
-        // Fornecedor: tenta COL_SUPPLIER; se vazio, varre todas as colunas entre
-        // COL_CAT e COL_STATUS procurando a primeira célula não-vazia com texto
         let rawSupplier = maxCol > COL_SUPPLIER ? str(row[COL_SUPPLIER]) : '';
         if (!rawSupplier) {
           const start = Math.min(COL_CAT + 1, COL_STATUS - 1);
@@ -679,8 +777,6 @@ async function loadSheet() {
         const rawStatus = maxCol > COL_STATUS ? str(row[COL_STATUS]) : '';
         const rawObs    = maxCol > COL_OBS    ? str(row[COL_OBS])    : '';
 
-        // Atualiza categoria se a célula tiver conteúdo
-        // Ignora textos que são claramente cabeçalhos ou totais
         const rawCatUp = rawCat.toUpperCase();
         const isCatNoise = ['TOTAL','RESUMO','VALOR','ANTIGO','OBSERV','#REF','#N/A'].some(w => rawCatUp.includes(w));
         if (rawCat.length > 1 && !isCatNoise) {
@@ -690,15 +786,12 @@ async function loadSheet() {
           }
         }
 
-        // Só processa linhas que tenham um status reconhecido
         const statusUp = rawStatus.toUpperCase();
         const hasStatus = STATUS_KEYWORDS.some(k => statusUp.includes(k));
         if (!hasStatus) continue;
 
-        // Fornecedor obrigatório (mínimo 2 caracteres)
         const supplier = rawSupplier;
         if (!supplier || supplier.length < 2) {
-          // Mostra o conteúdo real das células para diagnóstico
           const rowDump = row.slice(0, Math.min(maxCol, 10)).map((c,i) => `[${i}]${String(c).substring(0,10)}`).join(' ');
           diagLines.push(`[L${r+1}] ⚠️ Status "${rawStatus}" sem fornecedor | ${rowDump}`);
           continue;
@@ -723,15 +816,18 @@ async function loadSheet() {
           `Nenhuma linha com status válido encontrada.\n\nAmostra:\n${sample}\n\n` +
           `Verifique se a coluna de Status contém: RECEBIDO, AGUARDANDO ou NÃO SOLICITADO.\n` +
           `Certifique-se de que a linha 4 contém os títulos das colunas.\n\n` +
-          `Abra o diagnóstico para mais detalhes.`
+          `Triplo-clique no ícone para ver o diagnóstico.`
         );
       }
+
+      // Restaura seleções salvas
+      loadSelections();
+
       showApp();
       buildUI();
       await ctx.sync();
     });
-    // Apply clean borders after data is loaded
-    await applyCleanBorders();
+    // NÃO chama applyCleanBorders() automaticamente — apenas via botão
   } catch(err) {
     console.error(err);
     showError(err.message);
@@ -740,11 +836,13 @@ async function loadSheet() {
 
 async function reloadSheet() {
   document.getElementById('loading').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'none';
   selected = {};
   sheetData = [];
   panelItem = null;
   closeDetail();
+  document.getElementById('search-input').value = '';
   await loadSheet();
 }
 
@@ -773,11 +871,7 @@ function loadDemoData() {
 function buildUI() {
   document.getElementById('total-bar').style.display = 'flex';
 
-  const grouped = {};
-  for (const item of sheetData) {
-    if (!grouped[item.category]) grouped[item.category] = [];
-    grouped[item.category].push(item);
-  }
+  const grouped = groupByCategory();
 
   // ── Pane Selecionar ──
   const list = document.getElementById('supplier-list');
@@ -789,8 +883,8 @@ function buildUI() {
     const card = document.createElement('div');
     card.className = 'cat-card';
     card.id = 'cat-' + CSS.escape(cat);
+    if (selected[cat] != null) card.classList.add('has-selection');
 
-    // Header
     const hdr = document.createElement('div');
     hdr.className = 'cat-header';
     hdr.innerHTML = `
@@ -798,59 +892,14 @@ function buildUI() {
         <div class="cat-name">${cat}</div>
         <div class="cat-count">${items.length} fornecedor${items.length>1?'es':''}</div>
       </div>
-      <div class="cat-selected-val none" id="selval-${CSS.escape(cat)}">—</div>
+      <div class="cat-selected-val ${selected[cat]==null?'none':''}" id="selval-${CSS.escape(cat)}">${getSelValText(cat, items)}</div>
     `;
     card.appendChild(hdr);
 
-    // Options
     const optList = document.createElement('div');
     optList.className = 'options-list';
     for (const item of items) {
-      const row = document.createElement('div');
-      row.className = 'option-row';
-      row.dataset.row = item.row;
-      row.dataset.cat = cat;
-      const hasVal = item.value > 0;
-      const valStr = hasVal ? fmtBRL(item.value) : '—';
-      row.innerHTML = `
-        <div class="radio-wrap"><div class="radio"><div class="radio-dot"></div></div></div>
-        <div class="option-body">
-          <div class="option-sup">${item.supplier}</div>
-          ${item.obs ? `<div class="option-sub">${item.obs}</div>` : ''}
-        </div>
-        <div class="option-right">
-          <div class="option-val${hasVal?'':' no-val'}">${valStr}</div>
-          <div class="status-dropdown-wrap" data-row="${item.row}">
-            <button class="status-dropdown-btn" onclick="event.stopPropagation();toggleStatusMenu(this,${item.row})">
-              <span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span>
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div class="status-menu" style="right:0">
-              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'RECEBIDO',this)">
-                <span class="badge badge-green">Recebido</span>
-              </div>
-              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'AGUARDANDO RETORNO',this)">
-                <span class="badge badge-yellow">Aguardando</span>
-              </div>
-              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'NÃO SOLICITADO',this)">
-                <span class="badge badge-gray">Não Solic.</span>
-              </div>
-              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'EM ANÁLISE',this)">
-                <span class="badge badge-gray">Em Análise</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <button class="info-btn" title="Ver detalhes" onclick="event.stopPropagation();openDetail(${item.row})">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.01" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/>
-          </svg>
-        </button>
-      `;
-      row.addEventListener('click', (e) => {
-        if (e.target.closest('.info-btn')) return;
-        toggleSelect(item, row);
-      });
+      const row = buildOptionRow(item, cat);
       optList.appendChild(row);
     }
     card.appendChild(optList);
@@ -859,6 +908,109 @@ function buildUI() {
 
   buildCompareTable();
   updateTotal();
+}
+
+function buildOptionRow(item, cat) {
+  const row = document.createElement('div');
+  row.className = 'option-row' + (selected[cat] === item.row ? ' selected' : '');
+  row.dataset.row = item.row;
+  row.dataset.cat = cat;
+  const hasVal = item.value > 0;
+  const valStr = hasVal ? fmtBRL(item.value) : '—';
+  row.innerHTML = `
+    <div class="radio-wrap"><div class="radio"><div class="radio-dot"></div></div></div>
+    <div class="option-body">
+      <div class="option-sup">${item.supplier}</div>
+      ${item.obs ? `<div class="option-sub">${item.obs}</div>` : ''}
+    </div>
+    <div class="option-right">
+      <div class="option-val${hasVal?'':' no-val'}">${valStr}</div>
+      ${buildStatusDropdownHTML(item.row, item.status)}
+    </div>
+    <button class="info-btn" title="Ver detalhes" onclick="event.stopPropagation();openDetail(${item.row})">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.01" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/>
+      </svg>
+    </button>
+  `;
+  row.addEventListener('click', (e) => {
+    if (e.target.closest('.info-btn')) return;
+    toggleSelect(item, row);
+  });
+  return row;
+}
+
+function getSelValText(cat, items) {
+  const rowIdx = selected[cat];
+  if (rowIdx == null) return '—';
+  const item = items?.find(i => i.row === rowIdx) || sheetData.find(i => i.row === rowIdx);
+  return item && item.value > 0 ? fmtBRL(item.value) : item ? item.supplier.substring(0,12) : '✓';
+}
+
+// ════════════════════════════════════════════
+// STATUS DROPDOWN — função centralizada (evita duplicação)
+// ════════════════════════════════════════════
+function buildStatusDropdownHTML(rowIdx, status) {
+  return `
+    <div class="status-dropdown-wrap" data-row="${rowIdx}">
+      <button class="status-dropdown-btn" onclick="event.stopPropagation();toggleStatusMenu(this,${rowIdx})">
+        <span class="badge ${statusClass(status)}">${shortStatus(status)}</span>
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="status-menu">
+        <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${rowIdx},'RECEBIDO',this)">
+          <span class="badge badge-green">Recebido</span>
+        </div>
+        <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${rowIdx},'AGUARDANDO RETORNO',this)">
+          <span class="badge badge-yellow">Aguardando</span>
+        </div>
+        <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${rowIdx},'NÃO SOLICITADO',this)">
+          <span class="badge badge-gray">Não Solic.</span>
+        </div>
+        <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${rowIdx},'EM ANÁLISE',this)">
+          <span class="badge badge-gray">Em Análise</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════
+// SEARCH / FILTER
+// ════════════════════════════════════════════
+function filterCards(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('.cat-card');
+  let anyVisible = false;
+
+  cards.forEach(card => {
+    if (!q) {
+      card.classList.remove('hidden');
+      anyVisible = true;
+      return;
+    }
+    const catName = card.querySelector('.cat-name')?.textContent.toLowerCase() || '';
+    const suppliers = [...card.querySelectorAll('.option-sup')].map(el => el.textContent.toLowerCase()).join(' ');
+    const match = catName.includes(q) || suppliers.includes(q);
+    card.classList.toggle('hidden', !match);
+    if (match) anyVisible = true;
+  });
+
+  // Mensagem de resultado vazio
+  let emptyEl = document.getElementById('search-empty');
+  if (!anyVisible && q) {
+    if (!emptyEl) {
+      emptyEl = document.createElement('div');
+      emptyEl.id = 'search-empty';
+      emptyEl.className = 'search-empty';
+      emptyEl.textContent = 'Nenhum resultado para "' + query + '"';
+      document.getElementById('supplier-list').after(emptyEl);
+    } else {
+      emptyEl.textContent = 'Nenhum resultado para "' + query + '"';
+      emptyEl.style.display = '';
+    }
+  } else if (emptyEl) {
+    emptyEl.style.display = 'none';
+  }
 }
 
 // ════════════════════════════════════════════
@@ -875,19 +1027,9 @@ function buildCompareTable() {
     }
   }
 
-  // Group items by category preserving order
-  const groups = [];
-  const seenCats = {};
-  for (const item of sheetData) {
-    if (!seenCats[item.category]) {
-      seenCats[item.category] = [];
-      groups.push({ cat: item.category, items: seenCats[item.category] });
-    }
-    seenCats[item.category].push(item);
-  }
+  const groups = getGroups();
 
-  for (const group of groups) {
-    const { cat, items } = group;
+  for (const { cat, items } of groups) {
     const span = items.length;
 
     items.forEach((item, idx) => {
@@ -901,28 +1043,25 @@ function buildCompareTable() {
       tr.dataset.row = item.row;
       tr.dataset.cat = cat;
 
-      // Radio cell — never has a border
+      // Radio
       const tdRadio = document.createElement('td');
       tdRadio.className = 'td-radio';
       tdRadio.innerHTML = `<div class="cmp-radio"><div class="cmp-radio-dot"></div></div>`;
       tr.appendChild(tdRadio);
 
-      // Category cell — only on first row, with rowspan
+      // Category (only first row)
       if (isFirst) {
         const tdCat = document.createElement('td');
         tdCat.className = 'cat-cell cat-cell-first';
         tdCat.rowSpan = span;
-        // Cat cell border matches the group separator (darker)
         tdCat.style.cssText = `border-bottom:1px solid #B0A898;vertical-align:middle;cursor:default`;
         tdCat.addEventListener('click', e => e.stopPropagation());
         tdCat.textContent = cat;
         tr.appendChild(tdCat);
       }
 
-      // Inner border (between suppliers in same group): medium
-      // Group border (between categories): darker
-      const innerBorder  = '0.5px solid #C8C0B4'; // suppliers within group
-      const groupBorder  = '1px solid #B0A898';    // between categories
+      const innerBorder = '0.5px solid #C8C0B4';
+      const groupBorder = '1px solid #B0A898';
 
       // Supplier
       const tdSup = document.createElement('td');
@@ -931,39 +1070,26 @@ function buildCompareTable() {
       tdSup.textContent = item.supplier;
       tr.appendChild(tdSup);
 
-      // Value
+      // Value + % diff vs min
       const tdVal = document.createElement('td');
       tdVal.className = isBest ? 'best-value' : '';
       tdVal.style.cssText = `font-family:'DM Mono',monospace`;
       tdVal.style.borderBottom = isLast ? groupBorder : innerBorder;
-      tdVal.textContent = item.value > 0 ? fmtBRL(item.value) : '—';
+      if (item.value > 0) {
+        const diff = item.value - minByCat[cat];
+        const pct  = minByCat[cat] > 0 ? ((diff / minByCat[cat]) * 100) : 0;
+        const diffStr = (isBest || diff === 0) ? '' :
+          `<div class="val-diff">+${fmtBRL(diff)} (+${pct.toFixed(0)}%)</div>`;
+        tdVal.innerHTML = `${fmtBRL(item.value)}${diffStr}`;
+      } else {
+        tdVal.textContent = '—';
+      }
       tr.appendChild(tdVal);
 
       // Status dropdown
       const tdStatus = document.createElement('td');
       tdStatus.style.borderBottom = isLast ? groupBorder : innerBorder;
-      tdStatus.innerHTML = `
-        <div class="status-dropdown-wrap" data-row="${item.row}">
-          <button class="status-dropdown-btn" onclick="event.stopPropagation();toggleStatusMenu(this, ${item.row})">
-            <span class="badge ${statusClass(item.status)}">${item.status || '—'}</span>
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="status-menu">
-            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'RECEBIDO',this)">
-              <span class="badge badge-green">Recebido</span>
-            </div>
-            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'AGUARDANDO RETORNO',this)">
-              <span class="badge badge-yellow">Aguardando</span>
-            </div>
-            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'NÃO SOLICITADO',this)">
-              <span class="badge badge-gray">Não Solic.</span>
-            </div>
-            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'EM ANÁLISE',this)">
-              <span class="badge badge-gray">Em Análise</span>
-            </div>
-          </div>
-        </div>
-      `;
+      tdStatus.innerHTML = buildStatusDropdownHTML(item.row, item.status);
       tr.appendChild(tdStatus);
 
       tr.addEventListener('click', (e) => {
@@ -977,6 +1103,7 @@ function buildCompareTable() {
           else selected[c] = item.row;
           updateCatHeader(c);
           updateTotal();
+          saveSelections();
         }
         buildCompareTable();
       });
@@ -987,10 +1114,9 @@ function buildCompareTable() {
 }
 
 // ════════════════════════════════════════════
-// STATUS DROPDOWN (aba Comparar + aba Selecionar)
+// STATUS DROPDOWN
 // ════════════════════════════════════════════
 function toggleStatusMenu(btn, rowIdx) {
-  // Close any other open menus
   document.querySelectorAll('.status-menu.open').forEach(m => {
     if (m !== btn.nextElementSibling) m.classList.remove('open');
   });
@@ -998,10 +1124,8 @@ function toggleStatusMenu(btn, rowIdx) {
   const isOpen = menu.classList.contains('open');
   if (isOpen) { menu.classList.remove('open'); return; }
 
-  // Position fixed relative to button
   const rect = btn.getBoundingClientRect();
   menu.style.top  = (rect.bottom + 4) + 'px';
-  // Align right edge of menu to right edge of button, clamped to viewport
   const menuWidth = 170;
   let left = rect.right - menuWidth;
   if (left < 4) left = 4;
@@ -1010,21 +1134,17 @@ function toggleStatusMenu(btn, rowIdx) {
   menu.classList.add('open');
 }
 
-// Close menus when clicking elsewhere
 document.addEventListener('click', () => {
   document.querySelectorAll('.status-menu.open').forEach(m => m.classList.remove('open'));
 });
 
 async function setStatus(rowIdx, newStatus, menuItem) {
-  // Close menu
   menuItem.closest('.status-menu').classList.remove('open');
 
-  // Update in-memory data
   const item = sheetData.find(i => i.row === rowIdx);
   if (!item) return;
   item.status = newStatus;
 
-  // Update in the Excel sheet
   try {
     await Excel.run(async (ctx) => {
       let sheet;
@@ -1033,25 +1153,17 @@ async function setStatus(rowIdx, newStatus, menuItem) {
       const cell = sheet.getRangeByIndexes(rowIdx, COL_STATUS, 1, 1);
       cell.values = [[newStatus]];
       await ctx.sync();
-      toast(`Status alterado para "${newStatus}" ✓`);
+      toast(`Status alterado → "${shortStatus(newStatus)}" ✓`);
     });
   } catch(err) {
     toast('Erro ao salvar status: ' + err.message);
   }
 
-  // Rebuild both UI sections
   buildCompareTable();
   rebuildSelectPane();
 }
 
 function rebuildSelectPane() {
-  const grouped = {};
-  for (const item of sheetData) {
-    if (!grouped[item.category]) grouped[item.category] = [];
-    grouped[item.category].push(item);
-  }
-  const list = document.getElementById('supplier-list');
-  // Update only the badges in the select pane without full rebuild
   for (const item of sheetData) {
     const rowEl = document.querySelector(`.option-row[data-row="${item.row}"]`);
     if (!rowEl) continue;
@@ -1080,6 +1192,7 @@ function toggleSelect(item, rowEl) {
   }
   updateCatHeader(cat);
   updateTotal();
+  saveSelections();
 }
 
 function updateCatHeader(cat) {
@@ -1100,12 +1213,9 @@ function updateCatHeader(cat) {
 }
 
 function updateTotal() {
+  const grouped = groupByCategory();
   let total = 0, min = 0, max = 0;
-  const grouped = {};
-  for (const item of sheetData) {
-    if (!grouped[item.category]) grouped[item.category] = [];
-    grouped[item.category].push(item);
-  }
+
   for (const [, rowIdx] of Object.entries(selected)) {
     const item = sheetData.find(i => i.row === rowIdx);
     if (item) total += item.value;
@@ -1114,9 +1224,14 @@ function updateTotal() {
     const vals = items.filter(i => i.value > 0).map(i => i.value);
     if (vals.length) { min += Math.min(...vals); max += Math.max(...vals); }
   }
-  document.getElementById('total-value').textContent = fmtBRL(total);
-  document.getElementById('total-min').textContent   = min > 0 ? fmtBRL(min) : '—';
-  document.getElementById('total-max').textContent   = max > 0 ? fmtBRL(max) : '—';
+
+  const totalCats = Object.keys(grouped).length;
+  const selCount  = Object.keys(selected).length;
+
+  document.getElementById('total-value').textContent   = fmtBRL(total);
+  document.getElementById('total-min').textContent     = min > 0 ? fmtBRL(min) : '—';
+  document.getElementById('total-max').textContent     = max > 0 ? fmtBRL(max) : '—';
+  document.getElementById('total-progress').textContent = `${selCount} de ${totalCats} categoria${totalCats !== 1 ? 's' : ''} selecionada${totalCats !== 1 ? 's' : ''}`;
 }
 
 // ════════════════════════════════════════════
@@ -1139,20 +1254,12 @@ function openDetail(rowIdx) {
     valEl.innerHTML = `<div class="dp-val-nodata">Valor não informado</div>`;
   }
 
-  const obsEl = document.getElementById('dpObs');
-  obsEl.innerHTML = item.obs
-    ? `<div class="dp-obs-text">${item.obs}</div>`
-    : `<div class="dp-obs-empty">Nenhuma observação.</div>`;
+  document.getElementById('dpObsEdit').value = item.obs || '';
 
   const isSelected = selected[item.category] === item.row;
   const selBtn = document.getElementById('dpSelBtn');
-  if (isSelected) {
-    selBtn.textContent = 'Remover seleção';
-    selBtn.className = 'dp-sel-btn desel';
-  } else {
-    selBtn.textContent = 'Selecionar este fornecedor';
-    selBtn.className = 'dp-sel-btn';
-  }
+  selBtn.textContent = isSelected ? 'Remover seleção' : 'Selecionar este fornecedor';
+  selBtn.className   = isSelected ? 'dp-sel-btn desel' : 'dp-sel-btn';
 
   document.getElementById('detailPanel').classList.add('open');
 }
@@ -1166,15 +1273,45 @@ function selectFromPanel() {
   if (!panelItem) return;
   const rowEl = document.querySelector(`.option-row[data-row="${panelItem.row}"]`);
   if (rowEl) toggleSelect(panelItem, rowEl);
-  // update button state
   const isSelected = selected[panelItem.category] === panelItem.row;
   const selBtn = document.getElementById('dpSelBtn');
-  if (isSelected) {
-    selBtn.textContent = 'Remover seleção';
-    selBtn.className = 'dp-sel-btn desel';
-  } else {
-    selBtn.textContent = 'Selecionar este fornecedor';
-    selBtn.className = 'dp-sel-btn';
+  selBtn.textContent = isSelected ? 'Remover seleção' : 'Selecionar este fornecedor';
+  selBtn.className   = isSelected ? 'dp-sel-btn desel' : 'dp-sel-btn';
+}
+
+async function saveObs() {
+  if (!panelItem) return;
+  const newObs = document.getElementById('dpObsEdit').value.trim();
+  panelItem.obs = newObs;
+
+  // Atualiza opção na lista
+  const rowEl = document.querySelector(`.option-row[data-row="${panelItem.row}"]`);
+  if (rowEl) {
+    const subEl = rowEl.querySelector('.option-sub');
+    if (newObs) {
+      if (subEl) subEl.textContent = newObs;
+      else {
+        const bodyEl = rowEl.querySelector('.option-body');
+        const div = document.createElement('div');
+        div.className = 'option-sub';
+        div.textContent = newObs;
+        bodyEl.appendChild(div);
+      }
+    } else if (subEl) subEl.remove();
+  }
+
+  try {
+    await Excel.run(async (ctx) => {
+      let sheet;
+      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
+      const cell = sheet.getRangeByIndexes(panelItem.row, COL_OBS, 1, 1);
+      cell.values = [[newObs]];
+      await ctx.sync();
+      toast('Observação salva ✓');
+    });
+  } catch(err) {
+    toast('Erro ao salvar obs: ' + err.message);
   }
 }
 
@@ -1235,39 +1372,96 @@ document.getElementById('btn-mark-winners').addEventListener('click', async () =
 });
 
 // ════════════════════════════════════════════
-// CLEAR
+// CLEAN BORDERS — apenas via botão
 // ════════════════════════════════════════════
-document.getElementById('btn-clear').addEventListener('click', async () => {
-  selected = {};
-  document.querySelectorAll('.option-row').forEach(r => r.classList.remove('selected'));
-  const grouped = {};
-  for (const item of sheetData) {
-    if (!grouped[item.category]) grouped[item.category] = [];
-  }
-  document.querySelectorAll('.cat-card').forEach(card => card.classList.remove('has-selection'));
-  document.querySelectorAll('[id^="selval-"]').forEach(el => {
-    el.textContent = '—'; el.className = 'cat-selected-val none';
-  });
-  updateTotal();
+document.getElementById('btn-clean-borders').addEventListener('click', async () => {
+  await applyCleanBorders();
+});
+
+async function applyCleanBorders() {
   try {
     await Excel.run(async (ctx) => {
       let sheet;
       try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
       catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
-      const range = sheet.getUsedRange();
-      range.format.fill.clear();
-      range.format.font.bold = false;
+
+      const used = sheet.getUsedRange();
+      used.load('rowCount,columnCount');
       await ctx.sync();
+
+      const rows = used.rowCount;
+      const cols = used.columnCount;
+      const full = sheet.getRangeByIndexes(0, 0, rows, cols);
+      full.format.borders.getItem(Excel.BorderIndex.insideVertical).style  = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeLeft).style        = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeRight).style       = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeTop).style         = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.edgeBottom).style      = Excel.BorderLineStyle.none;
+      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).style  = Excel.BorderLineStyle.continuous;
+      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).color  = '#D6D0C4';
+      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).weight = Excel.BorderWeight.thin;
+      await ctx.sync();
+      toast('Bordas ajustadas ✓');
     });
-  } catch(e) {}
-  toast('Seleções limpas');
+  } catch(e) {
+    toast('Erro ao ajustar bordas: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════════════
+// CLEAR — com confirmação
+// ════════════════════════════════════════════
+document.getElementById('btn-clear').addEventListener('click', () => {
+  showConfirm(
+    'Limpar todas as seleções?',
+    'Esta ação removerá todas as seleções e a formatação de destaque na planilha. Não pode ser desfeito.',
+    async () => {
+      selected = {};
+      document.querySelectorAll('.option-row').forEach(r => r.classList.remove('selected'));
+      document.querySelectorAll('.cat-card').forEach(card => card.classList.remove('has-selection'));
+      document.querySelectorAll('[id^="selval-"]').forEach(el => {
+        el.textContent = '—'; el.className = 'cat-selected-val none';
+      });
+      updateTotal();
+      saveSelections();
+      buildCompareTable();
+      try {
+        await Excel.run(async (ctx) => {
+          let sheet;
+          try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+          catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
+          const range = sheet.getUsedRange();
+          range.format.fill.clear();
+          range.format.font.bold  = false;
+          range.format.font.color = '#000000';
+          await ctx.sync();
+        });
+      } catch(e) {}
+      toast('Seleções limpas');
+    }
+  );
 });
 
 // ════════════════════════════════════════════
-// CLEAN BORDERS BUTTON
+// CONFIRM DIALOG
 // ════════════════════════════════════════════
-document.getElementById('btn-clean-borders').addEventListener('click', async () => {
-  await applyCleanBorders();
+let _confirmCallback = null;
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent   = msg;
+  _confirmCallback = onOk;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  _confirmCallback = null;
+}
+document.getElementById('confirm-ok').addEventListener('click', () => {
+  closeConfirm();
+  if (_confirmCallback) _confirmCallback();
+});
+document.getElementById('confirm-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('confirm-overlay')) closeConfirm();
 });
 
 // ════════════════════════════════════════════
@@ -1284,8 +1478,179 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // ════════════════════════════════════════════
+// EXPORT: PDF — via iframe (sem popup)
+// ════════════════════════════════════════════
+document.getElementById('btn-export-pdf').addEventListener('click', () => {
+  const title = document.getElementById('export-name').value.trim() || 'Orçamento de Obra';
+  if (!sheetData.length) { toast('Nenhum dado carregado'); return; }
+
+  const groups = getGroups();
+  const minByCat = {};
+  for (const item of sheetData) {
+    if (item.value > 0) {
+      if (!minByCat[item.category] || item.value < minByCat[item.category])
+        minByCat[item.category] = item.value;
+    }
+  }
+
+  let totalSel = 0, totalMin = 0, totalMax = 0;
+  for (const [, rowIdx] of Object.entries(selected)) {
+    const item = sheetData.find(i => i.row === rowIdx);
+    if (item) totalSel += item.value;
+  }
+  for (const g of groups) {
+    const vals = g.items.filter(i => i.value > 0).map(i => i.value);
+    if (vals.length) { totalMin += Math.min(...vals); totalMax += Math.max(...vals); }
+  }
+
+  function pdfBadge(status) {
+    if (!status) return '<span class="badge badge-gray">—</span>';
+    const u = status.toUpperCase();
+    let cls = 'badge-gray', label = status;
+    if (u.includes('RECEBIDO'))   { cls = 'badge-green';  label = 'Recebido'; }
+    else if (u.includes('AGUARDANDO')) { cls = 'badge-yellow'; label = 'Aguardando'; }
+    else if (u.includes('NÃO') || u.includes('NAO')) { cls = 'badge-gray'; label = 'Não Solicitado'; }
+    else if (u.includes('ANÁLISE') || u.includes('ANALISE')) { cls = 'badge-yellow'; label = 'Em Análise'; }
+    return `<span class="badge ${cls}">${label}</span>`;
+  }
+
+  function pdfRadio(isSelected) {
+    return isSelected
+      ? `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.25" fill="#1C3A22" stroke="#1C3A22" stroke-width="1.5"/><circle cx="7" cy="7" r="2.5" fill="#fff"/></svg>`
+      : `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.25" fill="#fff" stroke="#C4C4B0" stroke-width="1.5"/></svg>`;
+  }
+
+  let rowsHtml = '';
+  for (const { cat, items } of groups) {
+    const span = items.length;
+    items.forEach((item, idx) => {
+      const isSelected = selected[cat] === item.row;
+      const isBest = item.value > 0 && item.value === minByCat[cat];
+      const isLast = idx === span - 1;
+      const borderBottom = isLast ? '1.5px solid #B0A898' : '0.5px solid #E8E4DC';
+      const diff = (!isBest && item.value > 0 && minByCat[cat])
+        ? `<div style="font-size:10px;color:#8A8A78;margin-top:2px">+${fmtBRL(item.value - minByCat[cat])}</div>` : '';
+      const valStr = item.value > 0
+        ? `${fmtBRL(item.value)}${diff}` : '—';
+      const catCell = idx === 0
+        ? `<td class="td-cat" rowspan="${span}" style="border-bottom:1.5px solid #B0A898">${cat}</td>` : '';
+      rowsHtml += `
+        <tr class="${isSelected?'row-selected':''}" style="border-bottom:${borderBottom}">
+          <td class="td-radio" style="border-bottom:none">${pdfRadio(isSelected)}</td>
+          ${catCell}
+          <td class="td-sup" style="border-bottom:${borderBottom};font-weight:${isSelected?'600':'500'};color:${isSelected?'#1C3A22':'#1A1A14'}">${item.supplier}</td>
+          <td class="td-val${isBest?' td-best':''}" style="border-bottom:${borderBottom}">${valStr}</td>
+          <td class="td-status" style="border-bottom:${borderBottom}">${pdfBadge(item.status)}</td>
+        </tr>`;
+    });
+  }
+
+  const dateStr = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})
+    + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"/><title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;font-size:12.5px;color:#1A1A14;background:#F5F3EE}
+.page-header{background:#1C3A22;color:#fff;padding:12px 16px 10px;display:flex;align-items:center;gap:10px}
+.page-header-title{font-size:14px;font-weight:600}
+.page-header-sub{font-size:10px;opacity:.55;margin-top:1px}
+.section-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#8A8A78;padding:12px 12px 8px}
+.wrap{padding:0 12px 80px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #E8E4DC}
+col.col-radio{width:26px}col.col-cat{width:110px}col.col-sup{width:auto}col.col-val{width:120px}col.col-status{width:140px}
+thead th{text-align:left;padding:6px 8px;color:#8A8A78;border-bottom:0.5px solid #E8E4DC;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+tbody td{padding:8px;vertical-align:middle;overflow:hidden}
+.td-radio{padding:8px 4px 8px 8px;border-bottom:none !important;vertical-align:middle}
+.td-cat{font-size:10px;color:#1A1A14;font-weight:700;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;padding-right:10px;word-break:break-word;line-height:1.3}
+.td-sup{font-weight:500;vertical-align:middle}
+.td-val{font-family:'DM Mono',monospace;font-size:12px;color:#4A4A3A;vertical-align:middle}
+.td-best{color:#1C3A22;font-weight:600}
+.td-status{vertical-align:middle}
+.row-selected td:not(.td-cat){background:#EAF3DE}
+.row-selected .td-sup{color:#1C3A22;font-weight:600}
+.row-selected .td-val{color:#1C3A22;font-weight:600}
+.badge{display:inline-flex;align-items:center;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.badge-green{background:#BBF7D0;color:#14532D}.badge-yellow{background:#FDE68A;color:#78350F}.badge-gray{background:#D1D5DB;color:#1F2937}
+.total-bar{background:#1C3A22;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+.t-label{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1px}
+.t-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-.02em}
+.t-right{display:flex;gap:12px;align-items:center}
+.total-pill{background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.18);border-radius:8px;padding:5px 10px;text-align:center}
+.p-label{font-size:8px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
+.p-val{font-size:11px;font-weight:600;font-family:'DM Mono',monospace}
+.p-val.up{color:#86EFAC}.p-val.dn{color:#FCA5A5}
+@media print{@page{margin:0;size:A4 portrait}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.total-bar{position:fixed;bottom:0;left:0;right:0}.wrap{padding-bottom:60px}}
+</style></head>
+<body>
+<div class="page-header">
+  <div>
+    <div class="page-header-title">${title}</div>
+    <div class="page-header-sub">Gerado em ${dateStr}</div>
+  </div>
+</div>
+<div class="wrap">
+  <div class="section-label">Visão geral de valores</div>
+  <table>
+    <colgroup><col class="col-radio"><col class="col-cat"><col class="col-sup"><col class="col-val"><col class="col-status"></colgroup>
+    <thead><tr><th></th><th>Categoria</th><th>Fornecedor</th><th>Valor</th><th>Status</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+</div>
+<div class="total-bar">
+  <div><div class="t-label">Total selecionado</div><div class="t-val">${totalSel > 0 ? fmtBRL(totalSel) : 'R$\u00a00,00'}</div></div>
+  <div class="t-right">
+    <div class="total-pill"><div class="p-label">Mínimo</div><div class="p-val up">${totalMin > 0 ? fmtBRL(totalMin) : '—'}</div></div>
+    <div class="total-pill"><div class="p-label">Máximo</div><div class="p-val dn">${totalMax > 0 ? fmtBRL(totalMax) : '—'}</div></div>
+  </div>
+</div>
+<script>window.onload=()=>{window.print()}<\/script>
+</body></html>`;
+
+  // ── Imprime via iframe oculto (sem popup bloqueado) ──
+  toast('Preparando impressão…');
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:-9999px';
+  document.body.appendChild(iframe);
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow.print();
+    } catch(e) {
+      toast('Erro ao imprimir: ' + e.message);
+    }
+    setTimeout(() => document.body.removeChild(iframe), 2000);
+  };
+  iframe.srcdoc = html;
+});
+
+// ════════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════════
+function groupByCategory() {
+  const grouped = {};
+  for (const item of sheetData) {
+    if (!grouped[item.category]) grouped[item.category] = [];
+    grouped[item.category].push(item);
+  }
+  return grouped;
+}
+
+function getGroups() {
+  const groups = [];
+  const seen = {};
+  for (const item of sheetData) {
+    if (!seen[item.category]) {
+      seen[item.category] = [];
+      groups.push({ cat: item.category, items: seen[item.category] });
+    }
+    seen[item.category].push(item);
+  }
+  return groups;
+}
+
 function getWinners() {
   return Object.entries(selected)
     .map(([, rowIdx]) => sheetData.find(i => i.row === rowIdx))
@@ -1305,321 +1670,12 @@ function statusClass(s) {
 function shortStatus(s) {
   if (!s) return '—';
   const u = s.toUpperCase();
-  if (u.includes('RECEBIDO'))              return 'Recebido';
-  if (u.includes('AGUARDANDO'))            return 'Aguardando';
-  if (u.includes('NÃO') || u.includes('NAO')) return 'Não solic.';
+  if (u.includes('RECEBIDO'))                         return 'Recebido';
+  if (u.includes('AGUARDANDO'))                       return 'Aguardando';
+  if (u.includes('NÃO') || u.includes('NAO'))         return 'Não solic.';
   if (u.includes('ANÁLISE') || u.includes('ANALISE')) return 'Em análise';
   return s;
 }
-
-// ════════════════════════════════════════════
-// CLEAN BORDERS — remove vertical, keep horizontal
-// ════════════════════════════════════════════
-async function applyCleanBorders() {
-  try {
-    await Excel.run(async (ctx) => {
-      let sheet;
-      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
-      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
-
-      const used = sheet.getUsedRange();
-      used.load('rowCount,columnCount');
-      await ctx.sync();
-
-      const rows = used.rowCount;
-      const cols = used.columnCount;
-
-      // Full range: remove ALL vertical borders in one pass
-      const full = sheet.getRangeByIndexes(0, 0, rows, cols);
-      full.format.borders.getItem(Excel.BorderIndex.insideVertical).style = Excel.BorderLineStyle.none;
-      full.format.borders.getItem(Excel.BorderIndex.edgeLeft).style       = Excel.BorderLineStyle.none;
-      full.format.borders.getItem(Excel.BorderIndex.edgeRight).style      = Excel.BorderLineStyle.none;
-      full.format.borders.getItem(Excel.BorderIndex.edgeTop).style        = Excel.BorderLineStyle.none;
-      full.format.borders.getItem(Excel.BorderIndex.edgeBottom).style     = Excel.BorderLineStyle.none;
-      // Add subtle horizontal lines between rows
-      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).style  = Excel.BorderLineStyle.continuous;
-      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).color  = '#D6D0C4';
-      full.format.borders.getItem(Excel.BorderIndex.insideHorizontal).weight = Excel.BorderWeight.thin;
-
-      await ctx.sync();
-      toast('Bordas ajustadas ✓');
-    });
-  } catch(e) {
-    console.warn('Border styling error:', e.message);
-    toast('Erro ao ajustar bordas: ' + e.message);
-  }
-}
-// ════════════════════════════════════════════
-// EXPORT: PDF — Planilha de Comparação
-// ════════════════════════════════════════════
-document.getElementById('btn-export-pdf').addEventListener('click', () => {
-  const title = document.getElementById('export-name').value.trim() || 'Orçamento de Obra';
-  if (!sheetData.length) { toast('Nenhum dado carregado'); return; }
-
-  // Group by category
-  const groups = [];
-  const seenCats = {};
-  for (const item of sheetData) {
-    if (!seenCats[item.category]) {
-      seenCats[item.category] = [];
-      groups.push({ cat: item.category, items: seenCats[item.category] });
-    }
-    seenCats[item.category].push(item);
-  }
-
-  const minByCat = {};
-  for (const item of sheetData) {
-    if (item.value > 0) {
-      if (!minByCat[item.category] || item.value < minByCat[item.category])
-        minByCat[item.category] = item.value;
-    }
-  }
-
-  // Compute totals
-  let totalSel = 0, totalMin = 0, totalMax = 0;
-  for (const [, rowIdx] of Object.entries(selected)) {
-    const item = sheetData.find(i => i.row === rowIdx);
-    if (item) totalSel += item.value;
-  }
-  for (const g of groups) {
-    const vals = g.items.filter(i => i.value > 0).map(i => i.value);
-    if (vals.length) { totalMin += Math.min(...vals); totalMax += Math.max(...vals); }
-  }
-
-  // Badge HTML helper (same visual as the app)
-  function pdfBadge(status) {
-    if (!status) return '<span class="badge badge-gray">—</span>';
-    const u = status.toUpperCase();
-    let cls = 'badge-gray', label = status;
-    if (u.includes('RECEBIDO'))   { cls = 'badge-green';  label = 'Recebido'; }
-    else if (u.includes('AGUARDANDO')) { cls = 'badge-yellow'; label = 'Aguardando Retorno'; }
-    else if (u.includes('NÃO') || u.includes('NAO')) { cls = 'badge-gray'; label = 'Não Solicitado'; }
-    else if (u.includes('ANÁLISE') || u.includes('ANALISE')) { cls = 'badge-yellow'; label = 'Em Análise'; }
-    return `<span class="badge ${cls}">${label}</span>`;
-  }
-
-  // Radio circle SVG helper
-  function pdfRadio(isSelected) {
-    if (isSelected) {
-      return `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.25" fill="#1C3A22" stroke="#1C3A22" stroke-width="1.5"/><circle cx="7" cy="7" r="2.5" fill="#fff"/></svg>`;
-    }
-    return `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.25" fill="#fff" stroke="#C4C4B0" stroke-width="1.5"/></svg>`;
-  }
-
-  // Build table rows HTML
-  let rowsHtml = '';
-  for (const { cat, items } of groups) {
-    const span = items.length;
-    items.forEach((item, idx) => {
-      const isSelected = selected[cat] === item.row;
-      const isBest = item.value > 0 && item.value === minByCat[cat];
-      const isLast = idx === span - 1;
-      const rowClass = isSelected ? 'row-selected' : '';
-      const borderBottom = isLast ? '1.5px solid #B0A898' : '0.5px solid #E8E4DC';
-      const valStr = item.value > 0 ? fmtBRL(item.value) : '—';
-      const catCell = idx === 0
-        ? `<td class="td-cat" rowspan="${span}" style="border-bottom:1.5px solid #B0A898">${cat}</td>`
-        : '';
-      rowsHtml += `
-        <tr class="${rowClass}" style="border-bottom:${borderBottom}">
-          <td class="td-radio" style="border-bottom:none">${pdfRadio(isSelected)}</td>
-          ${catCell}
-          <td class="td-sup" style="border-bottom:${borderBottom};font-weight:${isSelected?'600':'500'};color:${isSelected?'#1C3A22':'#1A1A14'}">${item.supplier}</td>
-          <td class="td-val${isBest ? ' td-best' : ''}" style="border-bottom:${borderBottom}">${valStr}</td>
-          <td class="td-status" style="border-bottom:${borderBottom}">${pdfBadge(item.status)}</td>
-        </tr>`;
-    });
-  }
-
-  const dateStr = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})
-    + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-
-  const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8"/>
-<title>${title}</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{
-    font-family:'DM Sans',sans-serif;font-size:12.5px;
-    color:#1A1A14;background:#F5F3EE;
-    padding:0;
-  }
-  /* ── PAGE HEADER ── */
-  .page-header{
-    background:#1C3A22;color:#fff;
-    padding:12px 16px 10px;
-    display:flex;align-items:center;gap:10px;
-    margin-bottom:0;
-  }
-  .page-header-icon{
-    width:28px;height:28px;border-radius:7px;
-    background:rgba(255,255,255,.12);
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .page-header-title{font-size:14px;font-weight:600;letter-spacing:-.01em}
-  .page-header-sub{font-size:10px;opacity:.55;margin-top:1px}
-  /* ── TAB BAR ── */
-  .tab-bar{
-    background:#fff;border-bottom:0.5px solid #E8E4DC;
-    display:flex;
-    padding:0;
-  }
-  .tab-item{
-    flex:1;padding:9px 4px;
-    text-align:center;font-size:11px;font-weight:600;
-    letter-spacing:.02em;
-    color:#8A8A78;border-bottom:2px solid transparent;
-    text-transform:uppercase;
-  }
-  .tab-item.active{
-    color:#1C3A22;border-bottom-color:#1C3A22;
-    background:#EAF3DE;
-  }
-  /* ── SECTION LABEL ── */
-  .section-label{
-    font-size:9px;font-weight:600;text-transform:uppercase;
-    letter-spacing:.08em;color:#8A8A78;
-    padding:12px 12px 8px;
-  }
-  /* ── TABLE ── */
-  .wrap{padding:0 12px 80px}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #E8E4DC}
-  col.col-radio{width:26px}
-  col.col-cat{width:110px}
-  col.col-sup{width:auto}
-  col.col-val{width:110px}
-  col.col-status{width:148px}
-  thead th{
-    text-align:left;padding:6px 8px;
-    color:#8A8A78;border-bottom:0.5px solid #E8E4DC;
-    font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
-  }
-  tbody td{padding:8px 8px;vertical-align:middle;overflow:hidden}
-  .td-radio{padding:8px 4px 8px 8px;border-bottom:none !important;vertical-align:middle}
-  .td-cat{
-    font-size:10px;color:#1A1A14;font-weight:700;
-    text-transform:uppercase;letter-spacing:.03em;
-    vertical-align:middle;padding-right:10px;
-    word-break:break-word;line-height:1.3;
-  }
-  .td-sup{font-weight:500;vertical-align:middle}
-  .td-val{
-    font-family:'DM Mono',monospace;font-size:12px;
-    color:#4A4A3A;vertical-align:middle;
-  }
-  .td-best{color:#1C3A22;font-weight:600}
-  .td-status{vertical-align:middle}
-  /* Row states */
-  .row-selected td:not(.td-cat){background:#EAF3DE}
-  .row-selected .td-sup{color:#1C3A22;font-weight:600}
-  .row-selected .td-val{color:#1C3A22;font-weight:600}
-  /* Badges */
-  .badge{
-    display:inline-flex;align-items:center;
-    font-size:9px;font-weight:600;padding:2px 7px;
-    border-radius:20px;white-space:nowrap;
-  }
-  .badge-green{background:#BBF7D0;color:#14532D}
-  .badge-yellow{background:#FDE68A;color:#78350F}
-  .badge-gray{background:#D1D5DB;color:#1F2937}
-  /* ── TOTAL BAR ── */
-  .total-bar{
-    background:#1C3A22;color:#fff;
-    padding:10px 16px;
-    display:flex;justify-content:space-between;align-items:center;
-    margin-top:0;
-  }
-  .t-left{display:flex;flex-direction:column}
-  .t-label{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1px}
-  .t-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-.02em}
-  .t-right{display:flex;gap:12px;align-items:center}
-  .total-pill{background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.18);border-radius:8px;padding:5px 10px;text-align:center}
-  .p-label{font-size:8px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
-  .p-val{font-size:11px;font-weight:600;font-family:'DM Mono',monospace}
-  .p-val.up{color:#86EFAC}
-  .p-val.dn{color:#FCA5A5}
-  /* ── PRINT ── */
-  @media print{
-    @page{margin:0;size:A4 portrait}
-    body{background:#F5F3EE;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .total-bar{position:fixed;bottom:0;left:0;right:0}
-    .wrap{padding-bottom:60px}
-  }
-</style>
-</head>
-<body>
-<!-- Header -->
-<div class="page-header">
-  <div class="page-header-icon">
-    <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
-      <path d="M7 14l5 5 9-10" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </div>
-  <div>
-    <div class="page-header-title">${title}</div>
-    <div class="page-header-sub">Gerado em ${dateStr}</div>
-  </div>
-</div>
-<!-- Tab bar -->
-<div class="tab-bar">
-  <div class="tab-item">Selecionar</div>
-  <div class="tab-item active">Comparar</div>
-  <div class="tab-item">Exportar</div>
-</div>
-<!-- Content -->
-<div class="wrap">
-  <div class="section-label">Visão geral de valores</div>
-  <table>
-    <colgroup>
-      <col class="col-radio">
-      <col class="col-cat">
-      <col class="col-sup">
-      <col class="col-val">
-      <col class="col-status">
-    </colgroup>
-    <thead>
-      <tr>
-        <th></th>
-        <th>Categoria</th>
-        <th>Fornecedor</th>
-        <th>Valor</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>${rowsHtml}</tbody>
-  </table>
-</div>
-<!-- Total bar -->
-<div class="total-bar">
-  <div class="t-left">
-    <div class="t-label">Total selecionado</div>
-    <div class="t-val">${totalSel > 0 ? fmtBRL(totalSel) : 'R$\u00a00,00'}</div>
-  </div>
-  <div class="t-right">
-    <div class="total-pill">
-      <div class="p-label">Mínimo</div>
-      <div class="p-val up">${totalMin > 0 ? fmtBRL(totalMin) : '—'}</div>
-    </div>
-    <div class="total-pill">
-      <div class="p-label">Máximo</div>
-      <div class="p-val dn">${totalMax > 0 ? fmtBRL(totalMax) : '—'}</div>
-    </div>
-  </div>
-</div>
-<script>window.onload = () => { window.print(); }<\/script>
-</body>
-</html>`;
-
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url, '_blank');
-  if (!win) toast('Permita pop-ups para exportar o PDF');
-  else toast('Abrindo janela de impressão… ✓');
-});
-
 function str(v) {
   return v === null || v === undefined ? '' : String(v).trim();
 }
@@ -1636,9 +1692,6 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
-}
-function toggleDiag() {
-  document.getElementById('diag-panel').classList.toggle('visible');
 }
 function showApp() {
   document.getElementById('loading').style.display = 'none';
@@ -1658,7 +1711,6 @@ function showError(msg) {
   if (diagLines.length > 0) {
     document.getElementById('diag-panel').textContent = diagLines.join('\n');
     document.getElementById('diag-panel').classList.add('visible');
-    document.getElementById('diag-toggle').style.display = 'none';
   }
   document.getElementById('total-bar').style.display = 'none';
 }
