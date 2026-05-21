@@ -158,7 +158,7 @@ body{
   font-size:12px;font-weight:500;font-family:'DM Mono',monospace;color:var(--ink-2);
 }
 .option-val.no-val{font-size:10px;color:var(--ink-4);font-family:'DM Sans',monospace;font-weight:400}
-.option-row.selected .option-val{color:var(--accent);font-weight:600}
+.option-row.selected .option-val{color:var(--accent)}
 .info-btn{
   width:20px;height:20px;border-radius:50%;
   background:transparent;border:0.5px solid var(--border);
@@ -207,8 +207,25 @@ body{
 .compare-table tr.cmp-selectable:hover td:not(.cat-cell):not(.td-radio){background:#F8F7F4;cursor:pointer}
 .compare-table tr.cmp-selected td:not(.cat-cell):not(.td-radio){background:var(--accent-light)}
 .compare-table td.cat-cell{background:transparent !important;cursor:default}
-.best-value{color:var(--accent);font-weight:600}
-.val-diff{font-size:10px;color:var(--ink-4);font-family:'DM Mono',monospace;margin-top:2px}
+/* best-value: sem negrito, só cor */
+.best-value{color:var(--accent)}
+/* linha selecionada fica em negrito */
+.compare-table tr.cmp-selected td:not(.cat-cell):not(.td-radio){font-weight:600}
+.option-row.selected .option-sup{font-weight:600}
+.option-row.selected .option-val{font-weight:600}
+
+/* ── DIFF TOOLTIP ── */
+#diff-tip{
+  position:fixed;pointer-events:none;z-index:9999;
+  padding:5px 10px;border-radius:8px;
+  font-size:12px;font-weight:600;font-family:'DM Mono',monospace;
+  white-space:nowrap;opacity:0;
+  transition:opacity .15s;
+  box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+#diff-tip.visible{opacity:1}
+#diff-tip.cheaper{background:#DCFCE7;color:#14532D;border:0.5px solid #86EFAC}
+#diff-tip.pricier{background:#FEE2E2;color:#991B1B;border:0.5px solid #FCA5A5}
 /* Radio column */
 .compare-table td.td-radio{
   border-bottom:none !important;
@@ -588,6 +605,9 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
   </div>
 </div>
 
+<!-- DIFF TOOLTIP -->
+<div id="diff-tip"></div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -933,6 +953,11 @@ function buildOptionRow(item, cat) {
       </svg>
     </button>
   `;
+  row.addEventListener('mousemove', (e) => {
+    if (e.target.closest('.info-btn')) return;
+    showDiffTip(e, item);
+  });
+  row.addEventListener('mouseleave', hideDiffTip);
   row.addEventListener('click', (e) => {
     if (e.target.closest('.info-btn')) return;
     toggleSelect(item, row);
@@ -1070,20 +1095,12 @@ function buildCompareTable() {
       tdSup.textContent = item.supplier;
       tr.appendChild(tdSup);
 
-      // Value + % diff vs min
+      // Value — sem diff estático, sem negrito no mínimo
       const tdVal = document.createElement('td');
       tdVal.className = isBest ? 'best-value' : '';
       tdVal.style.cssText = `font-family:'DM Mono',monospace`;
       tdVal.style.borderBottom = isLast ? groupBorder : innerBorder;
-      if (item.value > 0) {
-        const diff = item.value - minByCat[cat];
-        const pct  = minByCat[cat] > 0 ? ((diff / minByCat[cat]) * 100) : 0;
-        const diffStr = (isBest || diff === 0) ? '' :
-          `<div class="val-diff">+${fmtBRL(diff)} (+${pct.toFixed(0)}%)</div>`;
-        tdVal.innerHTML = `${fmtBRL(item.value)}${diffStr}`;
-      } else {
-        tdVal.textContent = '—';
-      }
+      tdVal.textContent = item.value > 0 ? fmtBRL(item.value) : '—';
       tr.appendChild(tdVal);
 
       // Status dropdown
@@ -1092,8 +1109,9 @@ function buildCompareTable() {
       tdStatus.innerHTML = buildStatusDropdownHTML(item.row, item.status);
       tr.appendChild(tdStatus);
 
+      tr.addEventListener('mousemove', (e) => showDiffTip(e, item));
+      tr.addEventListener('mouseleave', hideDiffTip);
       tr.addEventListener('click', (e) => {
-        if (e.target.closest('.status-dropdown-wrap')) return;
         const rowEl = document.querySelector(`.option-row[data-row="${item.row}"]`);
         if (rowEl) {
           toggleSelect(item, rowEl);
@@ -1514,32 +1532,22 @@ document.getElementById('btn-export-pdf').addEventListener('click', () => {
     return `<span class="badge ${cls}">${label}</span>`;
   }
 
-  function pdfRadio(isSelected) {
-    return isSelected
-      ? `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.25" fill="#1C3A22" stroke="#1C3A22" stroke-width="1.5"/><circle cx="7" cy="7" r="2.5" fill="#fff"/></svg>`
-      : `<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.25" fill="#fff" stroke="#C4C4B0" stroke-width="1.5"/></svg>`;
-  }
+  function pdfRadio(isSelected) { return ''; } // removido
 
   let rowsHtml = '';
   for (const { cat, items } of groups) {
     const span = items.length;
     items.forEach((item, idx) => {
       const isSelected = selected[cat] === item.row;
-      const isBest = item.value > 0 && item.value === minByCat[cat];
       const isLast = idx === span - 1;
       const borderBottom = isLast ? '1.5px solid #B0A898' : '0.5px solid #E8E4DC';
-      const diff = (!isBest && item.value > 0 && minByCat[cat])
-        ? `<div style="font-size:10px;color:#8A8A78;margin-top:2px">+${fmtBRL(item.value - minByCat[cat])}</div>` : '';
-      const valStr = item.value > 0
-        ? `${fmtBRL(item.value)}${diff}` : '—';
       const catCell = idx === 0
         ? `<td class="td-cat" rowspan="${span}" style="border-bottom:1.5px solid #B0A898">${cat}</td>` : '';
       rowsHtml += `
         <tr class="${isSelected?'row-selected':''}" style="border-bottom:${borderBottom}">
-          <td class="td-radio" style="border-bottom:none">${pdfRadio(isSelected)}</td>
           ${catCell}
           <td class="td-sup" style="border-bottom:${borderBottom};font-weight:${isSelected?'600':'500'};color:${isSelected?'#1C3A22':'#1A1A14'}">${item.supplier}</td>
-          <td class="td-val${isBest?' td-best':''}" style="border-bottom:${borderBottom}">${valStr}</td>
+          <td class="td-val" style="border-bottom:${borderBottom};color:${isSelected?'#1C3A22':'#4A4A3A'};font-weight:${isSelected?'600':'400'}">${item.value > 0 ? fmtBRL(item.value) : '—'}</td>
           <td class="td-status" style="border-bottom:${borderBottom}">${pdfBadge(item.status)}</td>
         </tr>`;
     });
@@ -1625,6 +1633,39 @@ tbody td{padding:8px;vertical-align:middle;overflow:hidden}
   };
   iframe.srcdoc = html;
 });
+
+// ════════════════════════════════════════════
+// DIFF TOOLTIP
+// ════════════════════════════════════════════
+const diffTip = document.getElementById('diff-tip');
+
+function showDiffTip(e, item) {
+  // Só mostra se houver um item diferente selecionado na mesma categoria
+  const selRowIdx = selected[item.category];
+  if (selRowIdx == null || selRowIdx === item.row) { hideDiffTip(); return; }
+  if (item.value <= 0) { hideDiffTip(); return; }
+
+  const selItem = sheetData.find(i => i.row === selRowIdx);
+  if (!selItem || selItem.value <= 0) { hideDiffTip(); return; }
+
+  const diff = item.value - selItem.value;
+  if (diff === 0) { hideDiffTip(); return; }
+
+  const cheaper = diff < 0;
+  const sign    = cheaper ? '−' : '+';
+  diffTip.textContent = `${sign} ${fmtBRL(Math.abs(diff))} vs selecionado`;
+  diffTip.className   = cheaper ? 'visible cheaper' : 'visible pricier';
+
+  // Posiciona próximo ao cursor sem sair da tela
+  const x = Math.min(e.clientX + 12, window.innerWidth - 200);
+  const y = e.clientY - 34;
+  diffTip.style.left = x + 'px';
+  diffTip.style.top  = y + 'px';
+}
+
+function hideDiffTip() {
+  diffTip.className = '';
+}
 
 // ════════════════════════════════════════════
 // HELPERS
