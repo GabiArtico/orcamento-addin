@@ -4,292 +4,349 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Orçamento de Obra</title>
-
-<!-- Office.js -->
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#1A1A14;--ink-2:#4A4A3A;--ink-3:#8A8A78;--ink-4:#C4C4B0;
+  --surface:#F5F3EE;--card:#FFFFFF;--accent:#1C3A22;--accent-2:#2D6A4F;
+  --accent-light:#EAF3DE;--red:#B83232;--red-light:#FBEAEA;
+  --warn:#A67C3A;--warn-light:#FFF8E6;--border:#E8E4DC;--r:10px;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--surface);
+  color:var(--ink);
+  display:flex;
+  flex-direction:column;
+  font-size:13px;
+}
 
-  :root {
-    --bg:       #0f1117;
-    --surface:  #181c27;
-    --border:   #2a2f3e;
-    --accent:   #c8f060;
-    --accent2:  #60d4f0;
-    --danger:   #f06060;
-    --warn:     #f0c060;
-    --text:     #e8eaf0;
-    --muted:    #6b7280;
-    --radius:   6px;
-  }
+/* ── LOADING ── */
+#loading{
+  position:fixed;inset:0;background:var(--surface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;z-index:200;
+}
+.spinner{
+  width:28px;height:28px;
+  border:2.5px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .75s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{font-size:13px;color:var(--ink-3)}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── HEADER ── */
+.header{
+  background:var(--accent);color:#fff;
+  padding:12px 14px 10px;
+  flex-shrink:0;
+  display:flex;align-items:center;gap:10px;
+}
+.header-brand{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.header-brand svg{flex-shrink:0;opacity:.85}
+.header-title{
+  font-size:14px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.header-sub{font-size:10px;opacity:.55;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-reload{
+  width:30px;height:30px;border-radius:8px;
+  background:rgba(255,255,255,.12);border:0.5px solid rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:#fff;flex-shrink:0;transition:background .15s;
+}
+.header-reload:hover{background:rgba(255,255,255,.22)}
 
-  body {
-    font-family: 'DM Mono', monospace;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 11px;
-    min-height: 100vh;
-  }
+/* ── TABS ── */
+.tabs{
+  display:flex;background:var(--card);
+  border-bottom:0.5px solid var(--border);
+  flex-shrink:0;
+}
+.tab{
+  flex:1;padding:9px 4px;
+  text-align:center;font-size:11px;font-weight:600;
+  letter-spacing:.02em;cursor:pointer;
+  color:var(--ink-3);border-bottom:2px solid transparent;
+  transition:all .18s;text-transform:uppercase;
+}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-light)}
+.tab:hover:not(.active){color:var(--ink-2);background:var(--surface)}
 
-  header {
-    padding: 16px 14px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  header h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -.3px;
-    color: var(--accent);
-    line-height: 1;
-  }
-  header p { color: var(--muted); font-size: 10px; margin-top: 4px; }
+/* ── PANES ── */
+.pane{display:none;flex:1;overflow-y:auto;padding:12px;padding-bottom:64px}
+.pane.active{display:block}
 
-  .tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .tab {
-    flex: 1;
-    padding: 9px 4px;
-    text-align: center;
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .5px;
-    cursor: pointer;
-    color: var(--muted);
-    border-bottom: 2px solid transparent;
-    transition: all .2s;
-    text-transform: uppercase;
-  }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+/* ── CATEGORY CARDS ── */
+.cat-card{
+  background:var(--card);border:0.5px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:10px;
+}
+.cat-card.has-selection{border-color:var(--accent-2)}
+.cat-header{
+  padding:10px 12px 8px;border-bottom:0.5px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+}
+.cat-name{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3}
+.cat-count{font-size:10px;color:var(--ink-3);margin-top:1px}
+.cat-selected-val{
+  font-size:13px;font-weight:600;font-family:'DM Mono',monospace;
+  color:var(--accent);white-space:nowrap;flex-shrink:0;
+}
+.cat-selected-val.none{color:var(--ink-4);font-size:11px;font-family:'DM Sans',monospace;font-weight:400}
+.options-list{padding:4px 0}
 
-  .pane { display: none; padding: 12px 14px; }
-  .pane.active { display: block; }
+/* ── OPTION ROWS ── */
+.option-row{
+  display:flex;align-items:center;
+  padding:0 10px;cursor:pointer;
+  transition:background .12s;position:relative;
+}
+.option-row:hover{background:#F8F7F4}
+.option-row.selected{background:var(--accent-light)}
+.radio-wrap{padding:8px 8px 8px 2px;flex-shrink:0}
+.radio{
+  width:15px;height:15px;border-radius:50%;
+  border:1.5px solid var(--border);background:var(--card);
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.option-row.selected .radio{border-color:var(--accent);background:var(--accent)}
+.radio-dot{width:5px;height:5px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+.option-row.selected .radio-dot{opacity:1}
+.option-body{flex:1;padding:8px 0;min-width:0}
+.option-sup{
+  font-size:12px;font-weight:500;color:var(--ink);
+  line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.option-row.selected .option-sup{color:var(--accent)}
+.option-sub{font-size:10px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.option-right{
+  display:flex;flex-direction:column;align-items:flex-end;
+  gap:3px;padding:8px 0 8px 8px;flex-shrink:0;
+}
+.option-val{
+  font-size:12px;font-weight:500;font-family:'DM Mono',monospace;color:var(--ink-2);
+}
+.option-val.no-val{font-size:10px;color:var(--ink-4);font-family:'DM Sans',monospace;font-weight:400}
+.option-row.selected .option-val{color:var(--accent);font-weight:600}
+.info-btn{
+  width:20px;height:20px;border-radius:50%;
+  background:transparent;border:0.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;margin-left:4px;
+  transition:all .15s;color:var(--ink-4);
+}
+.info-btn:hover{border-color:var(--accent-2);color:var(--accent);background:var(--accent-light)}
 
-  .section-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 14px 0 8px;
-  }
-  .section-label:first-child { margin-top: 0; }
+/* ── BADGES ── */
+.badge{
+  display:inline-flex;align-items:center;
+  font-size:9px;font-weight:600;padding:2px 7px;
+  border-radius:20px;white-space:nowrap;
+}
+.badge-green{background:#DCFCE7;color:#166534}
+.badge-yellow{background:#FEF9C3;color:#854D0E}
+.badge-gray{background:#F3F4F6;color:#4B5563}
 
-  .btn {
-    display: block;
-    width: 100%;
-    padding: 9px 12px;
-    border-radius: var(--radius);
-    border: none;
-    cursor: pointer;
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .3px;
-    transition: all .15s;
-    text-align: center;
-  }
-  .btn-primary { background: var(--accent); color: #0f1117; }
-  .btn-primary:hover { background: #d9ff70; transform: translateY(-1px); }
-  .btn-secondary { background: var(--border); color: var(--text); margin-top: 6px; }
-  .btn-secondary:hover { background: #363b4e; }
-  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 6px; }
-  .btn-danger:hover { background: var(--danger); color: #fff; }
-  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+/* ── SECTION LABEL ── */
+.section-label{
+  font-size:9px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ink-3);
+  margin:14px 0 8px;
+}
+.section-label:first-child{margin-top:0}
 
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
-    margin-bottom: 6px;
-  }
+/* ── COMPARE TABLE ── */
+.compare-table{width:100%;border-collapse:collapse;font-size:11px}
+.compare-table th{
+  text-align:left;padding:6px 8px;
+  color:var(--ink-3);border-bottom:0.5px solid var(--border);
+  font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+}
+.compare-table td{
+  padding:7px 8px;border-bottom:0.5px solid var(--border);
+}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-table tr:hover td{background:#F8F7F4}
+.best-value{color:var(--accent);font-weight:600}
+.compare-table .cat-cell{
+  font-size:9px;color:var(--ink-3);font-weight:600;
+  text-transform:uppercase;letter-spacing:.04em;
+}
 
-  .badge {
-    display: inline-block;
-    padding: 2px 7px;
-    border-radius: 20px;
-    font-size: 9px;
-    font-weight: 500;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-  }
-  .badge-green  { background: rgba(200,240,96,.15); color: var(--accent); border: 1px solid rgba(200,240,96,.3); }
-  .badge-yellow { background: rgba(240,192,96,.15); color: var(--warn);   border: 1px solid rgba(240,192,96,.3); }
-  .badge-red    { background: rgba(240,96,96,.15);  color: var(--danger); border: 1px solid rgba(240,96,96,.3);  }
-  .badge-muted  { background: rgba(107,114,128,.15);color: var(--muted);  border: 1px solid rgba(107,114,128,.3); }
+/* ── EXPORT PANE ── */
+.export-option{
+  background:var(--card);border:0.5px solid var(--border);
+  border-radius:var(--r);padding:12px;margin-bottom:8px;
+}
+.export-option h3{
+  font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px;
+}
+.export-option p{font-size:11px;color:var(--ink-3);line-height:1.5;margin-bottom:10px}
+.btn{
+  display:block;width:100%;
+  padding:9px 12px;border-radius:8px;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  transition:all .15s;text-align:center;letter-spacing:.01em;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-2)}
+.btn-secondary{background:var(--surface);color:var(--ink-2);border:0.5px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:transparent;color:var(--red);border:0.5px solid #E8B4B4}
+.btn-danger:hover{background:var(--red-light)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
 
-  .supplier-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    margin-bottom: 5px;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-  }
-  .supplier-row:hover { border-color: var(--accent); background: rgba(200,240,96,.04); }
-  .supplier-row.selected { border-color: var(--accent); background: rgba(200,240,96,.08); }
-  .supplier-row .check {
-    width: 16px; height: 16px;
-    border: 1.5px solid var(--border);
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .15s;
-  }
-  .supplier-row.selected .check { background: var(--accent); border-color: var(--accent); }
-  .supplier-row.selected .check::after { content: '✓'; font-size: 9px; color: #0f1117; font-weight: 700; }
-  .supplier-info { flex: 1; }
-  .supplier-name { font-size: 11px; font-weight: 500; }
-  .supplier-value { font-size: 12px; font-weight: 500; color: var(--accent2); }
+.export-name-input{
+  width:100%;border:0.5px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;
+  color:var(--ink);background:var(--card);
+  outline:none;transition:border-color .15s;margin-bottom:10px;
+}
+.export-name-input:focus{border-color:var(--accent-2)}
 
-  .compare-table { width: 100%; border-collapse: collapse; font-size: 10px; }
-  .compare-table th {
-    text-align: left;
-    padding: 6px 8px;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-    font-weight: 500;
-    font-size: 9px;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-  }
-  .compare-table td { padding: 7px 8px; border-bottom: 1px solid rgba(42,47,62,.6); }
-  .compare-table tr:last-child td { border-bottom: none; }
-  .compare-table tr:hover td { background: rgba(200,240,96,.03); }
-  .best-value { color: var(--accent); font-weight: 500; }
+/* ── DETAIL PANEL (slide-up overlay) ── */
+#detailPanel{
+  position:fixed;inset:0;
+  background:var(--surface);
+  z-index:150;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+}
+#detailPanel.open{transform:translateY(0)}
+.dp-header{
+  padding:14px 14px 12px;
+  border-bottom:0.5px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  flex-shrink:0;background:var(--card);
+}
+.dp-cat{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);margin-bottom:3px}
+.dp-sup{font-size:15px;font-weight:600;line-height:1.25;color:var(--ink)}
+.dp-close{
+  width:28px;height:28px;border-radius:50%;
+  border:0.5px solid var(--border);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--ink-3);flex-shrink:0;font-size:16px;line-height:1;
+  font-family:inherit;transition:background .15s;
+}
+.dp-close:hover{background:var(--surface);color:var(--ink)}
+.dp-body{flex:1;overflow-y:auto;padding:4px 0}
+.dp-section{padding:12px 14px;border-bottom:0.5px solid var(--border)}
+.dp-section:last-child{border-bottom:none}
+.dp-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:5px}
+.dp-val-big{font-size:24px;font-weight:600;font-family:'DM Mono',monospace;color:var(--accent);letter-spacing:-.02em}
+.dp-val-nodata{font-size:13px;color:var(--ink-4);font-style:italic}
+.dp-obs-text{font-size:13px;color:var(--ink-2);line-height:1.65;white-space:pre-wrap}
+.dp-obs-empty{font-size:13px;color:var(--ink-4);font-style:italic}
+.dp-footer{
+  padding:12px 14px;border-top:0.5px solid var(--border);
+  flex-shrink:0;background:var(--card);
+  display:flex;flex-direction:column;gap:8px;
+}
+.dp-sel-btn{
+  width:100%;background:var(--accent);color:#fff;border:none;
+  border-radius:9px;padding:11px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:background .15s;
+}
+.dp-sel-btn:hover{background:var(--accent-2)}
+.dp-sel-btn.desel{background:var(--red-light);color:var(--red);border:0.5px solid #e8b4b4}
+.dp-sel-btn.desel:hover{background:#f0cccc}
+.dp-hint{font-size:11px;color:var(--ink-4);text-align:center}
 
-  .total-bar {
-    position: sticky;
-    bottom: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 10px 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .total-bar .label { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .total-bar .value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--accent); }
+/* ── TOTAL BAR ── */
+.total-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--accent);color:#fff;
+  padding:10px 14px;
+  display:flex;justify-content:space-between;align-items:center;
+  z-index:90;flex-shrink:0;
+}
+.total-bar .t-left{display:flex;flex-direction:column}
+.total-bar .t-label{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1px}
+.total-bar .t-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-.02em}
+.total-bar .t-right{display:flex;gap:12px;align-items:center}
+.total-pill{background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.18);border-radius:8px;padding:5px 10px;text-align:center}
+.total-pill .p-label{font-size:8px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
+.total-pill .p-val{font-size:11px;font-weight:600;font-family:'DM Mono',monospace}
+.total-pill .p-val.up{color:#86EFAC}
+.total-pill .p-val.dn{color:#FCA5A5}
 
-  #toast {
-    position: fixed;
-    bottom: 60px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--surface);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 500;
-    opacity: 0;
-    transition: all .3s;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 999;
-  }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:58px;left:50%;
+  transform:translateX(-50%) translateY(12px);
+  background:var(--accent);color:#fff;
+  padding:8px 16px;border-radius:10px;
+  font-size:12px;font-weight:500;
+  opacity:0;transition:all .3s;
+  pointer-events:none;white-space:nowrap;z-index:300;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  #loading {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    z-index: 100;
-  }
-  .spinner {
-    width: 28px; height: 28px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loading p { color: var(--muted); font-size: 11px; }
+/* ── DIAGNOSTIC ── */
+#diag-panel{
+  background:var(--warn-light);border:0.5px solid #E8C97A;
+  border-radius:8px;padding:10px;margin-bottom:10px;
+  font-size:9px;color:var(--warn);line-height:1.7;
+  display:none;font-family:'DM Mono',monospace;
+  white-space:pre-wrap;word-break:break-all;
+}
+#diag-panel.visible{display:block}
+#diag-toggle{
+  font-size:10px;color:var(--ink-4);cursor:pointer;
+  text-decoration:underline;margin-bottom:8px;display:inline-block;
+}
 
-  .empty { text-align: center; padding: 24px 0; color: var(--muted); }
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:32px 16px;color:var(--ink-3)}
+.empty-icon{font-size:32px;margin-bottom:10px}
+.empty-title{font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.empty-text{font-size:11px;line-height:1.6;color:var(--ink-3)}
 
-  .export-option {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px;
-    margin-bottom: 8px;
-  }
-  .export-option h3 { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
-  .export-option p { color: var(--muted); font-size: 10px; line-height: 1.5; }
-
-  input[type="text"] {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 10px;
-    border-radius: var(--radius);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    outline: none;
-    transition: border-color .15s;
-  }
-  input[type="text"]:focus { border-color: var(--accent); }
-
-  /* Diagnostic panel */
-  #diag-panel {
-    background: #0a0e14;
-    border: 1px solid var(--warn);
-    border-radius: var(--radius);
-    padding: 10px;
-    margin-bottom: 10px;
-    font-size: 9px;
-    color: var(--warn);
-    line-height: 1.7;
-    display: none;
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-  #diag-panel.visible { display: block; }
-  #diag-toggle {
-    font-size: 9px;
-    color: var(--muted);
-    cursor: pointer;
-    text-decoration: underline;
-    margin-bottom: 8px;
-    display: inline-block;
-  }
-
-  .scrollable { overflow-y: auto; max-height: calc(100vh - 180px); padding-bottom: 60px; }
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--ink-4)}
 </style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div id="loading">
   <div class="spinner"></div>
   <p>Carregando planilha…</p>
 </div>
 
-<div id="app" style="display:none">
-  <header>
-    <h1>ORÇAMENTO</h1>
-    <p id="obra-nome">Carregando…</p>
+<!-- APP -->
+<div id="app" style="display:none;height:100%;display:none;flex-direction:column">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="7" fill="rgba(255,255,255,0.12)"/>
+        <path d="M7 14l5 5 9-10" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <div class="header-title">Orçamento de Obra</div>
+        <div class="header-sub" id="obra-nome">–</div>
+      </div>
+    </div>
+    <button class="header-reload" onclick="reloadSheet()" title="Recarregar planilha">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+      </svg>
+    </button>
   </header>
 
+  <!-- TABS -->
   <div class="tabs">
     <div class="tab active" data-tab="selecionar">Selecionar</div>
     <div class="tab" data-tab="comparar">Comparar</div>
@@ -297,15 +354,14 @@
   </div>
 
   <!-- PANE: SELECIONAR -->
-  <div class="pane active scrollable" id="pane-selecionar">
+  <div class="pane active" id="pane-selecionar">
     <span id="diag-toggle" onclick="toggleDiag()">🔍 diagnóstico</span>
     <div id="diag-panel"></div>
-    <div class="section-label">Categorias e Fornecedores</div>
     <div id="supplier-list"></div>
   </div>
 
   <!-- PANE: COMPARAR -->
-  <div class="pane scrollable" id="pane-comparar">
+  <div class="pane" id="pane-comparar">
     <div class="section-label">Visão geral de valores</div>
     <div style="overflow-x:auto">
       <table class="compare-table" id="compare-table">
@@ -323,66 +379,104 @@
   </div>
 
   <!-- PANE: EXPORTAR -->
-  <div class="pane scrollable" id="pane-exportar">
+  <div class="pane" id="pane-exportar">
     <div class="section-label">Nome da exportação</div>
-    <input type="text" id="export-name" placeholder="Ex: Orçamento Final v1" style="margin-bottom:12px"/>
+    <input class="export-name-input" type="text" id="export-name" placeholder="Ex: Orçamento Final v1"/>
 
     <div class="export-option">
       <h3>📋 Nova Aba — Resumo</h3>
       <p>Cria uma nova aba na planilha com os fornecedores selecionados, valores e total.</p>
-      <button class="btn btn-primary" id="btn-export-sheet" style="margin-top:10px">Exportar para Nova Aba</button>
+      <button class="btn btn-primary" id="btn-export-sheet">Exportar para Nova Aba</button>
     </div>
 
     <div class="export-option">
       <h3>✅ Marcar Vencedores</h3>
-      <p>Aplica uma marcação visual (cor) nas linhas dos fornecedores selecionados como vencedores na aba RESUMO.</p>
+      <p>Aplica marcação de cor nas linhas dos fornecedores selecionados na aba RESUMO.</p>
       <button class="btn btn-secondary" id="btn-mark-winners">Destacar Vencedores</button>
     </div>
 
     <div class="export-option">
       <h3>🔄 Limpar Seleções</h3>
-      <p>Remove todas as seleções de vencedores feitas nesta sessão.</p>
+      <p>Remove todas as seleções feitas nesta sessão.</p>
       <button class="btn btn-danger" id="btn-clear">Limpar Tudo</button>
     </div>
   </div>
 
-  <div class="total-bar">
-    <span class="label">Total Selecionado</span>
-    <span class="value" id="total-value">R$ 0</span>
+</div><!-- #app -->
+
+<!-- DETAIL PANEL -->
+<div id="detailPanel">
+  <div class="dp-header">
+    <div style="flex:1;min-width:0">
+      <div class="dp-cat" id="dpCat"></div>
+      <div class="dp-sup" id="dpSup"></div>
+    </div>
+    <button class="dp-close" onclick="closeDetail()">&#x2715;</button>
+  </div>
+  <div class="dp-body">
+    <div class="dp-section">
+      <div class="dp-label">Status do orçamento</div>
+      <div id="dpStatusBadge"></div>
+    </div>
+    <div class="dp-section">
+      <div class="dp-label">Valor do orçamento</div>
+      <div id="dpVal"></div>
+    </div>
+    <div class="dp-section">
+      <div class="dp-label">Observações / O que inclui</div>
+      <div id="dpObs"></div>
+    </div>
+  </div>
+  <div class="dp-footer">
+    <button class="dp-sel-btn" id="dpSelBtn" onclick="selectFromPanel()">Selecionar este fornecedor</button>
+    <div class="dp-hint">Clique em outro item para navegar</div>
   </div>
 </div>
 
+<!-- TOTAL BAR -->
+<div class="total-bar" id="total-bar" style="display:none">
+  <div class="t-left">
+    <div class="t-label">Total selecionado</div>
+    <div class="t-val" id="total-value">R$&nbsp;0</div>
+  </div>
+  <div class="t-right">
+    <div class="total-pill">
+      <div class="p-label">Mínimo</div>
+      <div class="p-val up" id="total-min">—</div>
+    </div>
+    <div class="total-pill">
+      <div class="p-label">Máximo</div>
+      <div class="p-val dn" id="total-max">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
 <div id="toast"></div>
 
 <script>
 // ════════════════════════════════════════════
-// COLUMN MAP — detecção automática de colunas
+// COLUMN MAP — ajuste se necessário
+// Índice base 0: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9
 // ════════════════════════════════════════════
-// Estratégia: detecta dinamicamente qual coluna contém cada campo
-// buscando por palavras-chave nos cabeçalhos da planilha.
-// Fallbacks hardcoded caso a detecção automática falhe.
+const COL_CAT      = 1;   // B — Categoria
+const COL_SUPPLIER = 3;   // D — Fornecedor
+const COL_VALUE    = 5;   // F — Valor
+const COL_STATUS   = 7;   // H — Status
+const COL_OBS      = 9;   // J — Observações
 
-// Fallbacks (índice base 0: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9)
-let COL_CAT      = 1;   // B — Categoria
-let COL_SUPPLIER = 3;   // D — Fornecedor
-let COL_VALUE    = 5;   // F — Valor
-let COL_STATUS   = 7;   // H — Status
-let COL_OBS      = 9;   // J — Observações
-
-// Palavras que indicam que a célula de categoria é um cabeçalho e não categoria real
-const SKIP_CAT_WORDS = ['VALOR', 'ANTIGO', 'OBSERV', 'STATUS', 'RESUMO', 'TOTAL',
-                        'CATEGORIA', 'FORNECEDOR', 'COLISEU', 'RECEBIDO',
-                        'AGUARDANDO', 'SOLICITADO', 'DATA'];
-
-// Palavras que identificam uma linha de fornecedor válida pelo campo Status
-const STATUS_KEYWORDS = ['RECEBIDO', 'AGUARDANDO', 'NÃO SOLICITADO', 'NAO SOLICITADO', 'NÃO SOLIC'];
+const SKIP_CAT_WORDS = ['VALOR','ANTIGO','OBSERV','STATUS','RESUMO','TOTAL',
+                        'CATEGORIA','FORNECEDOR','COLISEU','RECEBIDO',
+                        'AGUARDANDO','SOLICITADO','DATA'];
+const STATUS_KEYWORDS = ['RECEBIDO','AGUARDANDO','NÃO SOLICITADO','NAO SOLICITADO','NÃO SOLIC'];
 
 // ════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════
 let sheetData  = [];
-let selected   = {};
+let selected   = {};   // { category: rowIndex }
 let diagLines  = [];
+let panelItem  = null; // item currently shown in detail panel
 
 // ════════════════════════════════════════════
 // OFFICE INIT
@@ -391,86 +485,22 @@ Office.onReady(async (info) => {
   if (info.host === Office.HostType.Excel) {
     await loadSheet();
   } else {
+    // Fora do Excel: carrega demo
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    showApp();
     loadDemoData();
   }
 });
 
 // ════════════════════════════════════════════
-// AUTO-DETECT COLUMNS FROM HEADER ROW
-// ════════════════════════════════════════════
-function autoDetectColumns(vals) {
-  // Procura nas primeiras 10 linhas por uma linha que pareça cabeçalho
-  for (let r = 0; r < Math.min(10, vals.length); r++) {
-    const row = vals[r];
-    let catIdx = -1, supIdx = -1, valIdx = -1, stIdx = -1, obsIdx = -1;
-
-    for (let c = 0; c < row.length; c++) {
-      const cell = str(row[c]).toUpperCase();
-      if (!cell) continue;
-      if ((cell.includes('CATEG') || cell.includes('ITEM')) && catIdx < 0) catIdx = c;
-      else if ((cell.includes('FORNEC') || cell.includes('EMPRESA') || cell.includes('SUPPLIER')) && supIdx < 0) supIdx = c;
-      else if ((cell.includes('VALOR') || cell.includes('PREÇO') || cell.includes('PRECO') || cell.includes('VALUE')) && valIdx < 0) valIdx = c;
-      else if ((cell.includes('STATUS') || cell.includes('SITUAÇ') || cell.includes('SITUAC')) && stIdx < 0) stIdx = c;
-      else if ((cell.includes('OBS') || cell.includes('NOTA') || cell.includes('REMARK')) && obsIdx < 0) obsIdx = c;
-    }
-
-    // Considera detectado se encontrou pelo menos Status e Fornecedor
-    if (stIdx >= 0 && supIdx >= 0) {
-      diagLines.push(`🎯 Cabeçalho detectado na linha ${r+1}:`);
-      diagLines.push(`  Cat=${catIdx>=0?catIdx:'?'}(${catIdx>=0?colLetter(catIdx):'?'}) | Forn=${supIdx}(${colLetter(supIdx)}) | Val=${valIdx>=0?valIdx:'?'}(${valIdx>=0?colLetter(valIdx):'?'}) | Status=${stIdx}(${colLetter(stIdx)}) | Obs=${obsIdx>=0?obsIdx:'?'}`);
-
-      if (catIdx >= 0) COL_CAT = catIdx;
-      COL_SUPPLIER = supIdx;
-      if (valIdx >= 0) COL_VALUE = valIdx;
-      COL_STATUS = stIdx;
-      if (obsIdx >= 0) COL_OBS = obsIdx;
-      return true;
-    }
-  }
-  return false;
-}
-
-// ════════════════════════════════════════════
-// FALLBACK: SCAN-BASED STATUS DETECTION
-// Quando o mapeamento por cabeçalho falha,
-// encontra o Status varrendo toda a linha.
-// ════════════════════════════════════════════
-function findStatusInRow(row) {
-  for (let c = 0; c < row.length; c++) {
-    const cell = str(row[c]).toUpperCase();
-    if (STATUS_KEYWORDS.some(k => cell.includes(k))) {
-      return { status: str(row[c]), col: c };
-    }
-  }
-  return null;
-}
-
-function colLetter(idx) {
-  // Converte índice 0-based para letra de coluna (A, B, ..., Z, AA, ...)
-  let s = '';
-  let n = idx + 1;
-  while (n > 0) {
-    const rem = (n - 1) % 26;
-    s = String.fromCharCode(65 + rem) + s;
-    n = Math.floor((n - 1) / 26);
-  }
-  return s;
-}
-
-// ════════════════════════════════════════════
-// LOAD DATA FROM EXCEL
+// LOAD FROM EXCEL
 // ════════════════════════════════════════════
 async function loadSheet() {
   try {
     await Excel.run(async (ctx) => {
       let sheet;
-      try {
-        sheet = ctx.workbook.worksheets.getItem('RESUMO');
-      } catch(e) {
-        sheet = ctx.workbook.worksheets.getActiveWorksheet();
-      }
+      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
       sheet.load('name');
       const range = sheet.getUsedRange();
       range.load('values,rowCount,columnCount');
@@ -479,140 +509,61 @@ async function loadSheet() {
       document.getElementById('obra-nome').textContent = sheet.name;
 
       const vals = range.values;
-      sheetData  = [];
-      diagLines  = [];
-
+      sheetData = []; diagLines = [];
       diagLines.push(`Aba: "${sheet.name}" | Linhas: ${vals.length} | Cols: ${vals[0]?.length}`);
-      diagLines.push('─'.repeat(60));
+      diagLines.push(`B(${COL_CAT}) Cat | D(${COL_SUPPLIER}) Forn | F(${COL_VALUE}) Val | H(${COL_STATUS}) Status`);
+      diagLines.push('─'.repeat(50));
 
-      // ── Tenta detecção automática de colunas por cabeçalho ──
-      const autoDetected = autoDetectColumns(vals);
-      if (!autoDetected) {
-        diagLines.push('⚠️ Cabeçalho não encontrado — usando fallback de varredura por linha');
-        diagLines.push(`   Fallback: B(${COL_CAT}) Cat | D(${COL_SUPPLIER}) Forn | F(${COL_VALUE}) Val | H(${COL_STATUS}) Status | J(${COL_OBS}) Obs`);
-      }
-
-      diagLines.push('─'.repeat(60));
-
-      let lastCategory = '';
-      let found = 0;
-      // Rastreia qual coluna de Status foi mais frequente (para fallback)
-      const statusColFreq = {};
-
+      let lastCategory = '', found = 0;
       for (let r = 0; r < vals.length; r++) {
         const row = vals[r];
         const maxCol = row.length;
+        const rawCat      = maxCol > COL_CAT      ? str(row[COL_CAT])      : '';
+        const rawSupplier = maxCol > COL_SUPPLIER  ? str(row[COL_SUPPLIER]) : '';
+        const rawValue    = maxCol > COL_VALUE     ? row[COL_VALUE]         : '';
+        const rawStatus   = maxCol > COL_STATUS    ? str(row[COL_STATUS])   : '';
+        const rawObs      = maxCol > COL_OBS       ? str(row[COL_OBS])      : '';
 
-        const rawCat = maxCol > COL_CAT ? str(row[COL_CAT]) : '';
-
-        // Atualiza categoria quando célula mudar e não for cabeçalho/lixo
         if (rawCat.length > 1 && !SKIP_CAT_WORDS.some(w => rawCat.toUpperCase().includes(w))) {
           if (rawCat !== lastCategory) {
             lastCategory = rawCat;
             diagLines.push(`[L${r+1}] 📁 Cat → "${lastCategory}"`);
           }
         }
-
-        // ── Detecta Status: tenta coluna mapeada primeiro, depois varre toda a linha ──
-        let rawStatus = '';
-        let statusCol = COL_STATUS;
-
-        if (maxCol > COL_STATUS) {
-          rawStatus = str(row[COL_STATUS]);
-        }
-
         const statusUp = rawStatus.toUpperCase();
         const hasStatus = STATUS_KEYWORDS.some(k => statusUp.includes(k));
+        if (!hasStatus) continue;
 
-        if (!hasStatus) {
-          // Fallback: varre toda a linha procurando status
-          const found_st = findStatusInRow(row);
-          if (found_st) {
-            rawStatus = found_st.status;
-            statusCol = found_st.col;
-            statusColFreq[statusCol] = (statusColFreq[statusCol] || 0) + 1;
-            diagLines.push(`[L${r+1}] 🔍 Status encontrado por varredura na col ${colLetter(statusCol)}: "${rawStatus}"`);
-          } else {
-            continue; // Linha sem status válido — pula
-          }
-        }
-
-        // ── Detecta Fornecedor: tenta coluna mapeada, depois C, depois varre ──
-        let supplier = maxCol > COL_SUPPLIER ? str(row[COL_SUPPLIER]) : '';
-
+        let supplier = rawSupplier;
+        if (!supplier || supplier.length < 2)
+          supplier = maxCol > 2 ? str(row[2]) : '';
         if (!supplier || supplier.length < 2) {
-          // Tenta colunas vizinhas C, D, E (excluindo coluna de status)
-          for (const tryCol of [2, 3, 4, 1]) {
-            if (tryCol === statusCol || tryCol >= maxCol) continue;
-            const candidate = str(row[tryCol]);
-            // Candidato válido: texto com 2+ chars, não numérico puro, não é status
-            if (candidate.length >= 2 &&
-                isNaN(parseFloat(candidate.replace(',','.'))) &&
-                !STATUS_KEYWORDS.some(k => candidate.toUpperCase().includes(k)) &&
-                !SKIP_CAT_WORDS.some(k => candidate.toUpperCase().includes(k))) {
-              supplier = candidate;
-              diagLines.push(`[L${r+1}] 🔍 Fornecedor encontrado por fallback na col ${colLetter(tryCol)}: "${supplier}"`);
-              break;
-            }
-          }
-        }
-
-        if (!supplier || supplier.length < 2) {
-          diagLines.push(`[L${r+1}] ⚠️ Status "${rawStatus}" mas sem fornecedor identificável`);
+          diagLines.push(`[L${r+1}] ⚠️ Status "${rawStatus}" sem fornecedor`);
           continue;
         }
-
-        // ── Detecta Valor: tenta coluna mapeada, depois varre por número ──
-        let rawValue = maxCol > COL_VALUE ? row[COL_VALUE] : '';
-        if (!rawValue || parseValue(rawValue) === 0) {
-          for (let c = 0; c < maxCol; c++) {
-            if (c === statusCol || c === COL_SUPPLIER || c === COL_CAT) continue;
-            const v = row[c];
-            const pv = parseValue(v);
-            if (pv > 0) { rawValue = v; break; }
-          }
-        }
-
-        // ── Observações ──
-        const rawObs = maxCol > COL_OBS ? str(row[COL_OBS]) : '';
-
         found++;
-        diagLines.push(`[L${r+1}] ✅ "${supplier}" | Cat:"${lastCategory||'?'}" | Val:"${rawValue}" | St:"${rawStatus}"`);
-
+        diagLines.push(`[L${r+1}] ✅ "${supplier}" | "${lastCategory||'?'}" | "${rawValue}"`);
         sheetData.push({
-          row: r,
-          category: lastCategory || 'OUTROS',
-          supplier,
-          value: parseValue(rawValue),
-          rawValue: String(rawValue),
-          status: rawStatus,
-          obs: rawObs
+          row: r, category: lastCategory || 'OUTROS',
+          supplier, value: parseValue(rawValue),
+          rawValue, status: rawStatus, obs: rawObs
         });
       }
-
-      diagLines.push('─'.repeat(60));
-      diagLines.push(`Total linhas encontradas: ${found}`);
-
-      // Sugere correção se Status foi detectado por varredura em coluna diferente
-      const freqEntries = Object.entries(statusColFreq).sort((a,b) => b[1]-a[1]);
-      if (freqEntries.length > 0) {
-        const [bestCol, count] = freqEntries[0];
-        if (parseInt(bestCol) !== COL_STATUS) {
-          diagLines.push(`💡 Status encontrado ${count}x na col ${colLetter(parseInt(bestCol))} — considere ajustar COL_STATUS para ${bestCol}`);
-        }
-      }
+      diagLines.push('─'.repeat(50));
+      diagLines.push(`Total: ${found} linhas`);
 
       if (sheetData.length === 0) {
-        const sample = vals.slice(0, 8).map((row, i) =>
-          `L${i+1}: ${row.slice(0, 12).map(c => String(c).substring(0, 14)).join(' | ')}`
+        const sample = vals.slice(0,6).map((r,i)=>
+          `L${i+1}: ${r.slice(0,8).map(c=>String(c).substring(0,10)).join(' | ')}`
         ).join('\n');
         throw new Error(
-          `Nenhuma linha com status válido encontrada.\n\nAmostra das primeiras linhas:\n${sample}\n\n` +
-          `Palavras esperadas em qualquer coluna: RECEBIDO, AGUARDANDO, NÃO SOLICITADO.\n\n` +
-          `Abra o diagnóstico (botão no topo) para ver o log detalhado.`
+          `Nenhuma linha com status válido encontrada.\n\nAmostra:\n${sample}\n\n` +
+          `Esperado na coluna H: RECEBIDO, AGUARDANDO ou NÃO SOLICITADO.\n` +
+          `Colunas: B=Categoria, D=Fornecedor, F=Valor, H=Status, J=Obs\n\n` +
+          `Abra o diagnóstico para mais detalhes.`
         );
       }
-
+      showApp();
       buildUI();
     });
   } catch(err) {
@@ -621,62 +572,31 @@ async function loadSheet() {
   }
 }
 
-function str(v) {
-  return v === null || v === undefined ? '' : String(v).trim();
-}
-
-function showError(msg) {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('supplier-list').innerHTML = `
-    <div style="text-align:center;padding:30px 16px">
-      <div style="font-size:28px;margin-bottom:12px">⚠️</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--warn);font-size:13px;margin-bottom:8px">Formato não reconhecido</div>
-      <div style="color:var(--muted);font-size:10px;line-height:1.6;white-space:pre-wrap">${msg}</div>
-      <button class="btn btn-secondary" style="margin-top:16px" onclick="location.reload()">↺ Tentar novamente</button>
-    </div>
-  `;
-  if (diagLines.length > 0) {
-    document.getElementById('diag-panel').textContent = diagLines.join('\n');
-    document.getElementById('diag-panel').classList.add('visible');
-    document.getElementById('diag-toggle').style.display = 'none';
-  }
-  document.getElementById('total-value').textContent = 'R$ 0';
-}
-
-function parseValue(v) {
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string') {
-    // Remove R$, espaços, pontos de milhar, troca vírgula decimal por ponto
-    const cleaned = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
-    const n = parseFloat(cleaned);
-    return isNaN(n) ? 0 : n;
-  }
-  return 0;
+async function reloadSheet() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  selected = {};
+  sheetData = [];
+  panelItem = null;
+  closeDetail();
+  await loadSheet();
 }
 
 // ════════════════════════════════════════════
 // DEMO DATA
 // ════════════════════════════════════════════
 function loadDemoData() {
+  document.getElementById('obra-nome').textContent = 'DEMO — Residência';
   sheetData = [
-    { row:5,  category:'PISOS E REVESTIMENTOS', supplier:'ELEVATO',        value:0,         rawValue:'',              status:'RECEBIDO',          obs:'' },
-    { row:6,  category:'ILUMINAÇÃO',            supplier:'COMESPE',        value:0,         rawValue:'',              status:'RECEBIDO',          obs:'' },
-    { row:7,  category:'OBRA CIVIL PISCINA',    supplier:'RAFAEL PISCINAS',value:222697.26, rawValue:'R$ 222.697,26', status:'RECEBIDO',          obs:'Sem bomba de aquecimento' },
-    { row:8,  category:'OBRA CIVIL PISCINA',    supplier:'PROLAZER',       value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO',          obs:'' },
-    { row:9,  category:'OBRA CIVIL',            supplier:'RCS',            value:0,         rawValue:'',              status:'AGUARDANDO RETORNO',obs:'' },
-    { row:10, category:'PAISAGISMO',            supplier:'ECO PAISAGISMO', value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'' },
-    { row:11, category:'PAISAGISMO',            supplier:'KERBER',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'' },
-    { row:12, category:'PEDRAS PASSEIO',        supplier:'—',              value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'' },
-    { row:13, category:'PERGOLADO',             supplier:'UNIFLEX',        value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO',          obs:'Manual. Somente toldo' },
-    { row:14, category:'PERGOLADO',             supplier:'UNIFLEX',        value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO',          obs:'Motorizado. Somente toldo' },
-    { row:15, category:'PERGOLADO',             supplier:'UNIFLEX',        value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO',          obs:'Motorizado. Com estrutura' },
-    { row:16, category:'PERGOLADO',             supplier:'TOLDELLI',       value:0,         rawValue:'',              status:'AGUARDANDO RETORNO',obs:'' },
-    { row:17, category:'SAUNA',                 supplier:'MÔNACO',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'2,00 x 1,50m' },
-    { row:18, category:'SAUNA',                 supplier:'MÔNACO',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'1,50 x 1,50m' },
-    { row:19, category:'SAUNA',                 supplier:'MÔNACO',         value:0,         rawValue:'',              status:'NÃO SOLICITADO',    obs:'1,30 x 1,00m' },
-    { row:20, category:'MOBILIÁRIO EXTERNO',    supplier:'ELEVATO CASA',   value:0,         rawValue:'',              status:'RECEBIDO',          obs:'' },
-    { row:21, category:'MOBILIÁRIO EXTERNO',    supplier:'BRETON',         value:0,         rawValue:'',              status:'AGUARDANDO RETORNO',obs:'' },
+    { row:3,  category:'OBRA CIVIL PISCINA', supplier:'RAFAEL PISCINAS', value:222697.26, rawValue:'R$ 222.697,26', status:'RECEBIDO', obs:'Sem bomba de aquecimento' },
+    { row:4,  category:'OBRA CIVIL PISCINA', supplier:'PROLAZER',         value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO', obs:'' },
+    { row:5,  category:'OBRA CIVIL',         supplier:'RCS',              value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
+    { row:9,  category:'PERGOLADO',          supplier:'UNIFLEX',          value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO', obs:'Manual. Somente toldo' },
+    { row:10, category:'PERGOLADO',          supplier:'UNIFLEX',          value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO', obs:'Motorizado. Somente toldo' },
+    { row:11, category:'PERGOLADO',          supplier:'UNIFLEX',          value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO', obs:'Motorizado. Com estrutura' },
+    { row:12, category:'PERGOLADO',          supplier:'TOLDELLI',         value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
+    { row:14, category:'MOBILIÁRIO EXTERNO', supplier:'ELEVATO CASA',     value:0,         rawValue:'',              status:'RECEBIDO', obs:'' },
+    { row:15, category:'MOBILIÁRIO EXTERNO', supplier:'BRETON',           value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
   ];
   buildUI();
 }
@@ -685,67 +605,83 @@ function loadDemoData() {
 // BUILD UI
 // ════════════════════════════════════════════
 function buildUI() {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
+  document.getElementById('total-bar').style.display = 'flex';
 
-  // Diagnóstico
-  if (diagLines.length > 0) {
-    document.getElementById('diag-panel').textContent = diagLines.join('\n');
-  }
-
-  // Agrupar por categoria
   const grouped = {};
   for (const item of sheetData) {
     if (!grouped[item.category]) grouped[item.category] = [];
     grouped[item.category].push(item);
   }
-  const categories = Object.keys(grouped);
 
-  // ── Aba Selecionar ──
+  // ── Pane Selecionar ──
   const list = document.getElementById('supplier-list');
   list.innerHTML = '';
+  if (diagLines.length > 0)
+    document.getElementById('diag-panel').textContent = diagLines.join('\n');
 
-  for (const cat of categories) {
-    const label = document.createElement('div');
-    label.className = 'section-label';
-    label.style.marginTop = '12px';
-    label.textContent = cat;
-    list.appendChild(label);
+  for (const [cat, items] of Object.entries(grouped)) {
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.id = 'cat-' + CSS.escape(cat);
 
-    for (const item of grouped[cat]) {
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'cat-header';
+    hdr.innerHTML = `
+      <div>
+        <div class="cat-name">${cat}</div>
+        <div class="cat-count">${items.length} fornecedor${items.length>1?'es':''}</div>
+      </div>
+      <div class="cat-selected-val none" id="selval-${CSS.escape(cat)}">—</div>
+    `;
+    card.appendChild(hdr);
+
+    // Options
+    const optList = document.createElement('div');
+    optList.className = 'options-list';
+    for (const item of items) {
       const row = document.createElement('div');
-      row.className = 'supplier-row';
+      row.className = 'option-row';
       row.dataset.row = item.row;
-      // Usando data-cat como string simples (sem CSS.escape para evitar bugs de comparação)
-      row.dataset.cat = item.category;
-
-      const valueStr = item.value > 0 ? fmtBRL(item.value) : '—';
-
+      row.dataset.cat = cat;
+      const hasVal = item.value > 0;
+      const valStr = hasVal ? fmtBRL(item.value) : '—';
       row.innerHTML = `
-        <div class="check"></div>
-        <div class="supplier-info">
-          <div class="supplier-name">${escHtml(item.supplier)}</div>
-          ${item.obs ? `<div style="color:var(--muted);font-size:9px;margin-top:2px">${escHtml(item.obs)}</div>` : ''}
+        <div class="radio-wrap"><div class="radio"><div class="radio-dot"></div></div></div>
+        <div class="option-body">
+          <div class="option-sup">${item.supplier}</div>
+          ${item.obs ? `<div class="option-sub">${item.obs}</div>` : ''}
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div class="supplier-value">${valueStr}</div>
+        <div class="option-right">
+          <div class="option-val${hasVal?'':' no-val'}">${valStr}</div>
           <span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span>
         </div>
+        <button class="info-btn" title="Ver detalhes" onclick="event.stopPropagation();openDetail(${item.row})">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.01" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/>
+          </svg>
+        </button>
       `;
-
-      row.addEventListener('click', () => toggleSelect(item, row));
-      list.appendChild(row);
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('.info-btn')) return;
+        toggleSelect(item, row);
+      });
+      optList.appendChild(row);
     }
+    card.appendChild(optList);
+    list.appendChild(card);
   }
 
   buildCompareTable();
   updateTotal();
 }
 
+// ════════════════════════════════════════════
+// COMPARE TABLE
+// ════════════════════════════════════════════
 function buildCompareTable() {
   const tbody = document.getElementById('compare-body');
   tbody.innerHTML = '';
-
   const minByCat = {};
   for (const item of sheetData) {
     if (item.value > 0) {
@@ -753,15 +689,16 @@ function buildCompareTable() {
         minByCat[item.category] = item.value;
     }
   }
-
   let prevCat = '';
   for (const item of sheetData) {
-    const tr = document.createElement('tr');
     const isBest = item.value > 0 && item.value === minByCat[item.category];
+    const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="color:var(--muted);font-size:9px">${item.category !== prevCat ? escHtml(item.category) : ''}</td>
-      <td style="font-weight:500">${escHtml(item.supplier)}</td>
-      <td class="${isBest ? 'best-value' : ''}">${item.value > 0 ? fmtBRL(item.value) : '—'}</td>
+      <td class="cat-cell">${item.category !== prevCat ? item.category : ''}</td>
+      <td style="font-weight:500">${item.supplier}</td>
+      <td class="${isBest ? 'best-value' : ''}" style="font-family:'DM Mono',monospace">
+        ${item.value > 0 ? fmtBRL(item.value) : '—'}
+      </td>
       <td><span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span></td>
     `;
     tbody.appendChild(tr);
@@ -778,65 +715,143 @@ function toggleSelect(item, rowEl) {
     delete selected[cat];
     rowEl.classList.remove('selected');
   } else {
-    // Desmarca anterior da mesma categoria
-    document.querySelectorAll('.supplier-row').forEach(r => {
+    document.querySelectorAll('.option-row').forEach(r => {
       if (r.dataset.cat === cat) r.classList.remove('selected');
     });
     selected[cat] = item.row;
     rowEl.classList.add('selected');
   }
+  updateCatHeader(cat);
   updateTotal();
 }
 
+function updateCatHeader(cat) {
+  const valEl = document.getElementById('selval-' + CSS.escape(cat));
+  const card  = document.getElementById('cat-' + CSS.escape(cat));
+  if (!valEl) return;
+  const rowIdx = selected[cat];
+  if (rowIdx == null) {
+    valEl.textContent = '—';
+    valEl.className = 'cat-selected-val none';
+    card && card.classList.remove('has-selection');
+  } else {
+    const item = sheetData.find(i => i.row === rowIdx);
+    valEl.textContent = item && item.value > 0 ? fmtBRL(item.value) : item ? item.supplier.substring(0,12) : '✓';
+    valEl.className = 'cat-selected-val';
+    card && card.classList.add('has-selection');
+  }
+}
+
 function updateTotal() {
-  let total = 0;
+  let total = 0, min = 0, max = 0;
+  const grouped = {};
+  for (const item of sheetData) {
+    if (!grouped[item.category]) grouped[item.category] = [];
+    grouped[item.category].push(item);
+  }
   for (const [, rowIdx] of Object.entries(selected)) {
     const item = sheetData.find(i => i.row === rowIdx);
     if (item) total += item.value;
   }
+  for (const [, items] of Object.entries(grouped)) {
+    const vals = items.filter(i => i.value > 0).map(i => i.value);
+    if (vals.length) { min += Math.min(...vals); max += Math.max(...vals); }
+  }
   document.getElementById('total-value').textContent = fmtBRL(total);
+  document.getElementById('total-min').textContent   = min > 0 ? fmtBRL(min) : '—';
+  document.getElementById('total-max').textContent   = max > 0 ? fmtBRL(max) : '—';
+}
+
+// ════════════════════════════════════════════
+// DETAIL PANEL
+// ════════════════════════════════════════════
+function openDetail(rowIdx) {
+  const item = sheetData.find(i => i.row === rowIdx);
+  if (!item) return;
+  panelItem = item;
+
+  document.getElementById('dpCat').textContent  = item.category;
+  document.getElementById('dpSup').textContent  = item.supplier;
+  document.getElementById('dpStatusBadge').innerHTML =
+    `<span class="badge ${statusClass(item.status)}">${item.status || '—'}</span>`;
+
+  const valEl = document.getElementById('dpVal');
+  if (item.value > 0) {
+    valEl.innerHTML = `<div class="dp-val-big">${fmtBRL(item.value)}</div>`;
+  } else {
+    valEl.innerHTML = `<div class="dp-val-nodata">Valor não informado</div>`;
+  }
+
+  const obsEl = document.getElementById('dpObs');
+  obsEl.innerHTML = item.obs
+    ? `<div class="dp-obs-text">${item.obs}</div>`
+    : `<div class="dp-obs-empty">Nenhuma observação.</div>`;
+
+  const isSelected = selected[item.category] === item.row;
+  const selBtn = document.getElementById('dpSelBtn');
+  if (isSelected) {
+    selBtn.textContent = 'Remover seleção';
+    selBtn.className = 'dp-sel-btn desel';
+  } else {
+    selBtn.textContent = 'Selecionar este fornecedor';
+    selBtn.className = 'dp-sel-btn';
+  }
+
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  panelItem = null;
+}
+
+function selectFromPanel() {
+  if (!panelItem) return;
+  const rowEl = document.querySelector(`.option-row[data-row="${panelItem.row}"]`);
+  if (rowEl) toggleSelect(panelItem, rowEl);
+  // update button state
+  const isSelected = selected[panelItem.category] === panelItem.row;
+  const selBtn = document.getElementById('dpSelBtn');
+  if (isSelected) {
+    selBtn.textContent = 'Remover seleção';
+    selBtn.className = 'dp-sel-btn desel';
+  } else {
+    selBtn.textContent = 'Selecionar este fornecedor';
+    selBtn.className = 'dp-sel-btn';
+  }
 }
 
 // ════════════════════════════════════════════
 // EXPORT: NOVA ABA
 // ════════════════════════════════════════════
 document.getElementById('btn-export-sheet').addEventListener('click', async () => {
-  const name = document.getElementById('export-name').value.trim() || 'Orçamento Exportado';
+  const name    = document.getElementById('export-name').value.trim() || 'Orçamento Exportado';
   const winners = getWinners();
   if (!winners.length) { toast('Selecione ao menos um fornecedor'); return; }
-
   try {
     await Excel.run(async (ctx) => {
       try { ctx.workbook.worksheets.getItem(name).delete(); await ctx.sync(); } catch(e) {}
-
       const sheet = ctx.workbook.worksheets.add(name);
       sheet.activate();
-
       const rows = [
-        ['CATEGORIA', 'FORNECEDOR SELECIONADO', 'VALOR', 'STATUS', 'OBSERVAÇÕES'],
-        ...winners.map(w => [w.category, w.supplier, w.value || '', w.status, w.obs]),
-        ['', 'TOTAL', winners.reduce((s,w) => s+(w.value||0), 0), '', '']
+        ['CATEGORIA','FORNECEDOR SELECIONADO','VALOR','STATUS','OBSERVAÇÕES'],
+        ...winners.map(w => [w.category, w.supplier, w.value||'', w.status, w.obs]),
+        ['','TOTAL', winners.reduce((s,w)=>s+(w.value||0),0),'','']
       ];
-
-      const range = sheet.getRangeByIndexes(0, 0, rows.length, 5);
+      const range = sheet.getRangeByIndexes(0,0,rows.length,5);
       range.values = rows;
-
-      sheet.getRangeByIndexes(0, 0, 1, 5).format.fill.color = '#0f1117';
-      sheet.getRangeByIndexes(0, 0, 1, 5).format.font.color = '#c8f060';
-      sheet.getRangeByIndexes(0, 0, 1, 5).format.font.bold = true;
-
-      const totRow = sheet.getRangeByIndexes(rows.length-1, 0, 1, 5);
-      totRow.format.fill.color = '#181c27';
-      totRow.format.font.bold = true;
-      totRow.format.font.color = '#c8f060';
-
+      sheet.getRangeByIndexes(0,0,1,5).format.fill.color   = '#1C3A22';
+      sheet.getRangeByIndexes(0,0,1,5).format.font.color   = '#FFFFFF';
+      sheet.getRangeByIndexes(0,0,1,5).format.font.bold    = true;
+      const totRow = sheet.getRangeByIndexes(rows.length-1,0,1,5);
+      totRow.format.fill.color = '#EAF3DE';
+      totRow.format.font.bold  = true;
+      totRow.format.font.color = '#1C3A22';
       range.format.autofitColumns();
       await ctx.sync();
-      toast(`Aba "${name}" criada!`);
+      toast(`Aba "${name}" criada! ✓`);
     });
-  } catch(err) {
-    toast('Erro: ' + err.message);
-  }
+  } catch(err) { toast('Erro: ' + err.message); }
 });
 
 // ════════════════════════════════════════════
@@ -845,24 +860,21 @@ document.getElementById('btn-export-sheet').addEventListener('click', async () =
 document.getElementById('btn-mark-winners').addEventListener('click', async () => {
   const winners = getWinners();
   if (!winners.length) { toast('Selecione ao menos um fornecedor'); return; }
-
   try {
     await Excel.run(async (ctx) => {
       let sheet;
       try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
       catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
-
       for (const w of winners) {
-        const range = sheet.getRangeByIndexes(w.row, 0, 1, 20);
-        range.format.fill.color = '#1a2e0a';
-        range.format.font.bold = true;
+        const range = sheet.getRangeByIndexes(w.row,0,1,20);
+        range.format.fill.color = '#EAF3DE';
+        range.format.font.bold  = true;
+        range.format.font.color = '#1C3A22';
       }
       await ctx.sync();
-      toast('Vencedores destacados!');
+      toast('Vencedores destacados! ✓');
     });
-  } catch(err) {
-    toast('Erro: ' + err.message);
-  }
+  } catch(err) { toast('Erro: ' + err.message); }
 });
 
 // ════════════════════════════════════════════
@@ -870,9 +882,16 @@ document.getElementById('btn-mark-winners').addEventListener('click', async () =
 // ════════════════════════════════════════════
 document.getElementById('btn-clear').addEventListener('click', async () => {
   selected = {};
-  document.querySelectorAll('.supplier-row').forEach(r => r.classList.remove('selected'));
+  document.querySelectorAll('.option-row').forEach(r => r.classList.remove('selected'));
+  const grouped = {};
+  for (const item of sheetData) {
+    if (!grouped[item.category]) grouped[item.category] = [];
+  }
+  document.querySelectorAll('.cat-card').forEach(card => card.classList.remove('has-selection'));
+  document.querySelectorAll('[id^="selval-"]').forEach(el => {
+    el.textContent = '—'; el.className = 'cat-selected-val none';
+  });
   updateTotal();
-
   try {
     await Excel.run(async (ctx) => {
       let sheet;
@@ -884,59 +903,8 @@ document.getElementById('btn-clear').addEventListener('click', async () => {
       await ctx.sync();
     });
   } catch(e) {}
-
   toast('Seleções limpas');
 });
-
-// ════════════════════════════════════════════
-// HELPERS
-// ════════════════════════════════════════════
-function getWinners() {
-  return Object.entries(selected)
-    .map(([, rowIdx]) => sheetData.find(i => i.row === rowIdx))
-    .filter(Boolean);
-}
-
-function fmtBRL(v) {
-  return new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(v);
-}
-
-function statusClass(s) {
-  if (!s) return 'badge-muted';
-  const u = s.toUpperCase();
-  if (u.includes('RECEBIDO')) return 'badge-green';
-  if (u.includes('AGUARDANDO')) return 'badge-yellow';
-  return 'badge-muted';
-}
-
-function shortStatus(s) {
-  if (!s) return '—';
-  const u = s.toUpperCase();
-  if (u.includes('RECEBIDO')) return 'Recebido';
-  if (u.includes('AGUARDANDO')) return 'Aguardando';
-  if (u.includes('NÃO') || u.includes('NAO')) return 'Não Solic.';
-  return s;
-}
-
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-function toggleDiag() {
-  const p = document.getElementById('diag-panel');
-  p.classList.toggle('visible');
-}
 
 // ════════════════════════════════════════════
 // TABS
@@ -950,6 +918,75 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'comparar') buildCompareTable();
   });
 });
+
+// ════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════
+function getWinners() {
+  return Object.entries(selected)
+    .map(([, rowIdx]) => sheetData.find(i => i.row === rowIdx))
+    .filter(Boolean);
+}
+function fmtBRL(v) {
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+}
+function statusClass(s) {
+  if (!s) return 'badge-gray';
+  const u = s.toUpperCase();
+  if (u.includes('RECEBIDO'))   return 'badge-green';
+  if (u.includes('AGUARDANDO')) return 'badge-yellow';
+  return 'badge-gray';
+}
+function shortStatus(s) {
+  if (!s) return '—';
+  const u = s.toUpperCase();
+  if (u.includes('RECEBIDO'))              return 'Recebido';
+  if (u.includes('AGUARDANDO'))            return 'Aguardando';
+  if (u.includes('NÃO') || u.includes('NAO')) return 'Não solic.';
+  return s;
+}
+function str(v) {
+  return v === null || v === undefined ? '' : String(v).trim();
+}
+function parseValue(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const n = parseFloat(v.replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.'));
+    return isNaN(n) ? 0 : n;
+  }
+  return 0;
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function toggleDiag() {
+  document.getElementById('diag-panel').classList.toggle('visible');
+}
+function showApp() {
+  document.getElementById('loading').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+}
+function showError(msg) {
+  showApp();
+  document.getElementById('supplier-list').innerHTML = `
+    <div class="empty">
+      <div class="empty-icon">⚠️</div>
+      <div class="empty-title">Formato não reconhecido</div>
+      <div class="empty-text" style="white-space:pre-wrap">${msg}</div>
+      <button class="btn btn-secondary" style="margin-top:16px;max-width:200px;margin-inline:auto" onclick="reloadSheet()">↺ Tentar novamente</button>
+    </div>
+  `;
+  if (diagLines.length > 0) {
+    document.getElementById('diag-panel').textContent = diagLines.join('\n');
+    document.getElementById('diag-panel').classList.add('visible');
+    document.getElementById('diag-toggle').style.display = 'none';
+  }
+  document.getElementById('total-bar').style.display = 'none';
+}
 </script>
 </body>
 </html>
