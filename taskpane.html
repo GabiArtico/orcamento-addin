@@ -172,12 +172,45 @@ body{
   padding:7px 8px;border-bottom:0.5px solid var(--border);
 }
 .compare-table tr:last-child td{border-bottom:none}
-.compare-table tr:hover td{background:#F8F7F4}
+.compare-table tr.cmp-selectable:hover td{background:#F8F7F4;cursor:pointer}
+.compare-table tr.cmp-selected td{background:var(--accent-light)}
 .best-value{color:var(--accent);font-weight:600}
 .compare-table .cat-cell{
   font-size:9px;color:var(--ink-3);font-weight:600;
   text-transform:uppercase;letter-spacing:.04em;
 }
+/* radio in compare table */
+.cmp-radio{
+  width:14px;height:14px;border-radius:50%;
+  border:1.5px solid var(--border);background:var(--card);
+  display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;vertical-align:middle;
+}
+tr.cmp-selected .cmp-radio{border-color:var(--accent);background:var(--accent)}
+.cmp-radio-dot{width:5px;height:5px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+tr.cmp-selected .cmp-radio-dot{opacity:1}
+/* status dropdown */
+.status-dropdown-wrap{position:relative;display:inline-block}
+.status-dropdown-btn{
+  all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+}
+.status-dropdown-btn .badge{cursor:pointer}
+.status-dropdown-btn svg{color:var(--ink-4);flex-shrink:0}
+.status-menu{
+  position:absolute;right:0;top:calc(100% + 4px);
+  background:var(--card);border:0.5px solid var(--border);
+  border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);
+  z-index:500;min-width:170px;overflow:hidden;
+  display:none;
+}
+.status-menu.open{display:block}
+.status-menu-item{
+  padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;
+  display:flex;align-items:center;gap:8px;color:var(--ink-2);
+  transition:background .12s;
+}
+.status-menu-item:hover{background:var(--surface)}
+.status-menu-item .badge{pointer-events:none}
 
 /* ── EXPORT PANE ── */
 .export-option{
@@ -362,11 +395,12 @@ body{
 
   <!-- PANE: COMPARAR -->
   <div class="pane" id="pane-comparar">
-    <div class="section-label">Visão geral de valores</div>
+    <div class="section-label">Visão geral de valores — clique para selecionar</div>
     <div style="overflow-x:auto">
       <table class="compare-table" id="compare-table">
         <thead>
           <tr>
+            <th style="width:20px"></th>
             <th>Categoria</th>
             <th>Fornecedor</th>
             <th>Valor</th>
@@ -474,7 +508,7 @@ const HEADER_KEYWORDS = {
   obs:      ['OBS','NOTA','DESCR','DETALHE','INCLUI','COMENTARIO','COMENTÁRIO'],
 };
 
-const STATUS_KEYWORDS = ['RECEBIDO','AGUARDANDO','NÃO SOLICITADO','NAO SOLICITADO','NÃO SOLIC'];
+const STATUS_KEYWORDS = ['RECEBIDO','AGUARDANDO','NÃO SOLICITADO','NAO SOLICITADO','NÃO SOLIC','EM ANÁLISE','EM ANALISE'];
 
 // Detecta colunas a partir da linha de cabeçalho
 function detectColumns(headerRow) {
@@ -657,6 +691,7 @@ async function loadSheet() {
       }
       showApp();
       buildUI();
+      await applyCleanBorders(ctx, sheet, vals.length);
     });
   } catch(err) {
     console.error(err);
@@ -746,7 +781,26 @@ function buildUI() {
         </div>
         <div class="option-right">
           <div class="option-val${hasVal?'':' no-val'}">${valStr}</div>
-          <span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span>
+          <div class="status-dropdown-wrap" data-row="${item.row}">
+            <button class="status-dropdown-btn" onclick="event.stopPropagation();toggleStatusMenu(this,${item.row})">
+              <span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span>
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="status-menu" style="right:0">
+              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'RECEBIDO',this)">
+                <span class="badge badge-green">Recebido</span>
+              </div>
+              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'AGUARDANDO RETORNO',this)">
+                <span class="badge badge-yellow">Aguardando</span>
+              </div>
+              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'NÃO SOLICITADO',this)">
+                <span class="badge badge-gray">Não Solic.</span>
+              </div>
+              <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'EM ANÁLISE',this)">
+                <span class="badge badge-gray">Em Análise</span>
+              </div>
+            </div>
+          </div>
         </div>
         <button class="info-btn" title="Ver detalhes" onclick="event.stopPropagation();openDetail(${item.row})">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -784,17 +838,130 @@ function buildCompareTable() {
   let prevCat = '';
   for (const item of sheetData) {
     const isBest = item.value > 0 && item.value === minByCat[item.category];
+    const isSelected = selected[item.category] === item.row;
     const tr = document.createElement('tr');
+    tr.className = 'cmp-selectable' + (isSelected ? ' cmp-selected' : '');
+    tr.dataset.row = item.row;
+    tr.dataset.cat = item.category;
+
     tr.innerHTML = `
+      <td style="padding-right:4px">
+        <div class="cmp-radio"><div class="cmp-radio-dot"></div></div>
+      </td>
       <td class="cat-cell">${item.category !== prevCat ? item.category : ''}</td>
       <td style="font-weight:500">${item.supplier}</td>
       <td class="${isBest ? 'best-value' : ''}" style="font-family:'DM Mono',monospace">
         ${item.value > 0 ? fmtBRL(item.value) : '—'}
       </td>
-      <td><span class="badge ${statusClass(item.status)}">${shortStatus(item.status)}</span></td>
+      <td>
+        <div class="status-dropdown-wrap" data-row="${item.row}">
+          <button class="status-dropdown-btn" onclick="event.stopPropagation();toggleStatusMenu(this, ${item.row})">
+            <span class="badge ${statusClass(item.status)}">${item.status || '—'}</span>
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="status-menu">
+            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'RECEBIDO',this)">
+              <span class="badge badge-green">Recebido</span>
+            </div>
+            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'AGUARDANDO RETORNO',this)">
+              <span class="badge badge-yellow">Aguardando</span>
+            </div>
+            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'NÃO SOLICITADO',this)">
+              <span class="badge badge-gray">Não Solic.</span>
+            </div>
+            <div class="status-menu-item" onclick="event.stopPropagation();setStatus(${item.row},'EM ANÁLISE',this)">
+              <span class="badge badge-gray">Em Análise</span>
+            </div>
+          </div>
+        </div>
+      </td>
     `;
+
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('.status-dropdown-wrap')) return;
+      const rowEl = document.querySelector(`.option-row[data-row="${item.row}"]`);
+      if (rowEl) {
+        toggleSelect(item, rowEl);
+      } else {
+        // Select directly if option-row not rendered
+        const cat = item.category;
+        if (selected[cat] === item.row) {
+          delete selected[cat];
+        } else {
+          selected[cat] = item.row;
+        }
+        updateCatHeader(cat);
+        updateTotal();
+      }
+      buildCompareTable();
+    });
+
     tbody.appendChild(tr);
     prevCat = item.category;
+  }
+}
+
+// ════════════════════════════════════════════
+// STATUS DROPDOWN (aba Comparar + aba Selecionar)
+// ════════════════════════════════════════════
+function toggleStatusMenu(btn, rowIdx) {
+  // Close any other open menus
+  document.querySelectorAll('.status-menu.open').forEach(m => {
+    if (m !== btn.nextElementSibling) m.classList.remove('open');
+  });
+  btn.nextElementSibling.classList.toggle('open');
+}
+
+// Close menus when clicking elsewhere
+document.addEventListener('click', () => {
+  document.querySelectorAll('.status-menu.open').forEach(m => m.classList.remove('open'));
+});
+
+async function setStatus(rowIdx, newStatus, menuItem) {
+  // Close menu
+  menuItem.closest('.status-menu').classList.remove('open');
+
+  // Update in-memory data
+  const item = sheetData.find(i => i.row === rowIdx);
+  if (!item) return;
+  item.status = newStatus;
+
+  // Update in the Excel sheet
+  try {
+    await Excel.run(async (ctx) => {
+      let sheet;
+      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
+      const cell = sheet.getRangeByIndexes(rowIdx, COL_STATUS, 1, 1);
+      cell.values = [[newStatus]];
+      await ctx.sync();
+      toast(`Status alterado para "${newStatus}" ✓`);
+    });
+  } catch(err) {
+    toast('Erro ao salvar status: ' + err.message);
+  }
+
+  // Rebuild both UI sections
+  buildCompareTable();
+  rebuildSelectPane();
+}
+
+function rebuildSelectPane() {
+  const grouped = {};
+  for (const item of sheetData) {
+    if (!grouped[item.category]) grouped[item.category] = [];
+    grouped[item.category].push(item);
+  }
+  const list = document.getElementById('supplier-list');
+  // Update only the badges in the select pane without full rebuild
+  for (const item of sheetData) {
+    const rowEl = document.querySelector(`.option-row[data-row="${item.row}"]`);
+    if (!rowEl) continue;
+    const badge = rowEl.querySelector('.badge');
+    if (badge) {
+      badge.className = `badge ${statusClass(item.status)}`;
+      badge.textContent = shortStatus(item.status);
+    }
   }
 }
 
@@ -1027,6 +1194,7 @@ function statusClass(s) {
   const u = s.toUpperCase();
   if (u.includes('RECEBIDO'))   return 'badge-green';
   if (u.includes('AGUARDANDO')) return 'badge-yellow';
+  if (u.includes('ANÁLISE') || u.includes('ANALISE')) return 'badge-yellow';
   return 'badge-gray';
 }
 function shortStatus(s) {
@@ -1035,7 +1203,37 @@ function shortStatus(s) {
   if (u.includes('RECEBIDO'))              return 'Recebido';
   if (u.includes('AGUARDANDO'))            return 'Aguardando';
   if (u.includes('NÃO') || u.includes('NAO')) return 'Não solic.';
+  if (u.includes('ANÁLISE') || u.includes('ANALISE')) return 'Em análise';
   return s;
+}
+
+// ════════════════════════════════════════════
+// CLEAN BORDERS — remove vertical, keep horizontal
+// ════════════════════════════════════════════
+async function applyCleanBorders(ctx, sheet, rowCount) {
+  try {
+    const dataRange = sheet.getRangeByIndexes(0, 0, rowCount, 15);
+    // Remove all vertical borders
+    const verticals = [
+      Excel.BorderIndex.insideVertical,
+      Excel.BorderIndex.edgeLeft,
+      Excel.BorderIndex.edgeRight,
+    ];
+    for (const border of verticals) {
+      dataRange.format.borders.getItem(border).style = Excel.BorderLineStyle.none;
+    }
+    // Keep horizontal borders (thin, subtle color)
+    dataRange.format.borders.getItem(Excel.BorderIndex.insideHorizontal).style = Excel.BorderLineStyle.continuous;
+    dataRange.format.borders.getItem(Excel.BorderIndex.insideHorizontal).color = '#D6D0C4';
+    dataRange.format.borders.getItem(Excel.BorderIndex.insideHorizontal).weight = Excel.BorderWeight.thin;
+    // Remove top/bottom outer borders
+    dataRange.format.borders.getItem(Excel.BorderIndex.edgeTop).style = Excel.BorderLineStyle.none;
+    dataRange.format.borders.getItem(Excel.BorderIndex.edgeBottom).style = Excel.BorderLineStyle.none;
+    await ctx.sync();
+  } catch(e) {
+    // Non-critical — ignore border errors silently
+    console.warn('Border styling skipped:', e.message);
+  }
 }
 function str(v) {
   return v === null || v === undefined ? '' : String(v).trim();
