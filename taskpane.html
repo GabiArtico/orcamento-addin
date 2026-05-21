@@ -172,8 +172,8 @@ body{
   padding:8px 8px;border-bottom:0.5px solid var(--border);
 }
 .compare-table tr:last-child td{border-bottom:none}
-.compare-table tr.cmp-selectable:hover td:not(.cat-cell){background:#F8F7F4;cursor:pointer}
-.compare-table tr.cmp-selected td:not(.cat-cell){background:var(--accent-light)}
+.compare-table tr.cmp-selectable:hover td:not(.cat-cell):not(.td-radio){background:#F8F7F4;cursor:pointer}
+.compare-table tr.cmp-selected td:not(.cat-cell):not(.td-radio){background:var(--accent-light)}
 .compare-table td.cat-cell{background:transparent !important;cursor:default}
 .best-value{color:var(--accent);font-weight:600}
 /* Radio column — never show any border */
@@ -182,12 +182,11 @@ body{
   padding-right:4px;width:22px;
 }
 .compare-table .cat-cell{
-  font-size:12px;color:var(--ink-2);font-weight:700;
-  text-transform:uppercase;letter-spacing:.04em;
-  vertical-align:middle;
+  font-size:10px;color:var(--ink);font-weight:700;
+  text-transform:uppercase;letter-spacing:.03em;
+  vertical-align:middle;white-space:nowrap;width:1%;padding-right:14px;
 }
 .compare-table td.cat-cell-first{
-  padding-top:10px;
   vertical-align:middle;
 }
 /* radio in compare table */
