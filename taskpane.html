@@ -175,28 +175,19 @@ body{
 .compare-table tr.cmp-selectable:hover td{background:#F8F7F4;cursor:pointer}
 .compare-table tr.cmp-selected td{background:var(--accent-light)}
 .best-value{color:var(--accent);font-weight:600}
+/* Radio column — never show any border */
+.compare-table td.td-radio{
+  border-bottom:none !important;
+  padding-right:4px;width:22px;
+}
 .compare-table .cat-cell{
-  font-size:10px;color:var(--ink-3);font-weight:600;
+  font-size:12px;color:var(--ink-2);font-weight:700;
   text-transform:uppercase;letter-spacing:.04em;
-  vertical-align:top;
+  vertical-align:middle;
 }
-/* Cat cell: rows that continue a group — no top border, no bottom border */
-.compare-table td.cat-cell-cont{
-  border-bottom:none;
-  border-top:none;
-}
-/* Last row of a group keeps the bottom border on non-cat cells */
-.compare-table tr.cat-last td:not(.cat-cell){
-  border-bottom:0.5px solid var(--border);
-}
-/* Inner rows of a group: no bottom border on non-cat cells */
-.compare-table tr.cat-inner td:not(.cat-cell){
-  border-bottom:0.5px solid var(--border);
-}
-/* First row of a group */
 .compare-table td.cat-cell-first{
   padding-top:10px;
-  vertical-align:top;
+  vertical-align:middle;
 }
 /* radio in compare table */
 .cmp-radio{
@@ -889,9 +880,9 @@ function buildCompareTable() {
       tr.dataset.row = item.row;
       tr.dataset.cat = cat;
 
-      // Radio cell
+      // Radio cell — never has a border
       const tdRadio = document.createElement('td');
-      tdRadio.style.cssText = 'padding-right:4px;width:22px';
+      tdRadio.className = 'td-radio';
       tdRadio.innerHTML = `<div class="cmp-radio"><div class="cmp-radio-dot"></div></div>`;
       tr.appendChild(tdRadio);
 
@@ -900,17 +891,21 @@ function buildCompareTable() {
         const tdCat = document.createElement('td');
         tdCat.className = 'cat-cell cat-cell-first';
         tdCat.rowSpan = span;
-        // No bottom border on cat cell — it spans multiple rows
-        tdCat.style.cssText = `border-bottom:${span > 1 ? '0.5px solid var(--border)' : '0.5px solid var(--border)'};vertical-align:middle`;
+        // Cat cell border matches the group separator (darker)
+        tdCat.style.cssText = `border-bottom:1px solid #B0A898;vertical-align:middle`;
         tdCat.textContent = cat;
         tr.appendChild(tdCat);
       }
 
+      // Inner border (between suppliers in same group): medium
+      // Group border (between categories): darker
+      const innerBorder  = '0.5px solid #C8C0B4'; // suppliers within group
+      const groupBorder  = '1px solid #B0A898';    // between categories
+
       // Supplier
       const tdSup = document.createElement('td');
       tdSup.style.cssText = 'font-weight:500';
-      // Remove bottom border on inner rows (not last)
-      if (!isLast) tdSup.style.borderBottom = '0.5px solid #F0EDE6';
+      tdSup.style.borderBottom = isLast ? groupBorder : innerBorder;
       tdSup.textContent = item.supplier;
       tr.appendChild(tdSup);
 
@@ -918,13 +913,13 @@ function buildCompareTable() {
       const tdVal = document.createElement('td');
       tdVal.className = isBest ? 'best-value' : '';
       tdVal.style.cssText = `font-family:'DM Mono',monospace`;
-      if (!isLast) tdVal.style.borderBottom = '0.5px solid #F0EDE6';
+      tdVal.style.borderBottom = isLast ? groupBorder : innerBorder;
       tdVal.textContent = item.value > 0 ? fmtBRL(item.value) : '—';
       tr.appendChild(tdVal);
 
       // Status dropdown
       const tdStatus = document.createElement('td');
-      if (!isLast) tdStatus.style.borderBottom = '0.5px solid #F0EDE6';
+      tdStatus.style.borderBottom = isLast ? groupBorder : innerBorder;
       tdStatus.innerHTML = `
         <div class="status-dropdown-wrap" data-row="${item.row}">
           <button class="status-dropdown-btn" onclick="event.stopPropagation();toggleStatusMenu(this, ${item.row})">
