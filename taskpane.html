@@ -172,8 +172,9 @@ body{
   padding:8px 8px;border-bottom:0.5px solid var(--border);
 }
 .compare-table tr:last-child td{border-bottom:none}
-.compare-table tr.cmp-selectable:hover td{background:#F8F7F4;cursor:pointer}
-.compare-table tr.cmp-selected td{background:var(--accent-light)}
+.compare-table tr.cmp-selectable:hover td:not(.cat-cell){background:#F8F7F4;cursor:pointer}
+.compare-table tr.cmp-selected td:not(.cat-cell){background:var(--accent-light)}
+.compare-table td.cat-cell{background:transparent !important;cursor:default}
 .best-value{color:var(--accent);font-weight:600}
 /* Radio column — never show any border */
 .compare-table td.td-radio{
@@ -892,8 +893,8 @@ function buildCompareTable() {
         tdCat.className = 'cat-cell cat-cell-first';
         tdCat.rowSpan = span;
         // Cat cell border matches the group separator (darker)
-        tdCat.style.cssText = `border-bottom:1px solid #B0A898;vertical-align:middle`;
-        tdCat.textContent = cat;
+        tdCat.style.cssText = `border-bottom:1px solid #B0A898;vertical-align:middle;cursor:default`;
+        tdCat.addEventListener('click', e => e.stopPropagation());
         tr.appendChild(tdCat);
       }
 
