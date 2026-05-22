@@ -591,44 +591,46 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 
 <!-- DETAIL MODAL -->
 <div id="detail-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:flex-end;justify-content:center">
-  <div id="detail-modal" style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 -4px 32px rgba(0,0,0,.2);overflow:hidden">
-    <div class="dp-header">
-      <div style="flex:1;min-width:0">
-        <div class="dp-cat" id="dpCat"></div>
-        <div class="dp-sup" id="dpSup"></div>
-      </div>
-      <button onclick="closeDetail()" style="all:unset;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface);flex-shrink:0">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="dp-body" style="flex:1;overflow-y:auto">
-      <div class="dp-section">
-        <div class="dp-label">Status do orçamento</div>
-        <div id="dpStatusBadge"></div>
-      </div>
-      <div class="dp-section">
-        <div class="dp-label">Valor do orçamento</div>
-        <div id="dpVal"></div>
-      </div>
-      <div class="dp-section">
-        <div class="dp-label">Observações / O que inclui</div>
-        <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Nenhuma observação…"></textarea>
-        <button class="dp-save-obs" onclick="saveObs()">Salvar observação</button>
-      </div>
-      <div class="dp-section" id="dpPdfSection" style="display:none">
-        <div class="dp-label">PDF do Orçamento</div>
-        <button class="dp-pdf-open-btn" id="dpPdfBtn" onclick="openPdfFromPanel()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-            <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
-          </svg>
-          Abrir PDF do Orçamento
+  <div id="detail-modal" style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 -4px 32px rgba(0,0,0,.2);overflow:hidden">
+
+    <!-- compact top bar: name + meta + close -->
+    <div style="padding:12px 14px 10px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div class="dp-cat" id="dpCat"></div>
+          <div class="dp-sup" id="dpSup" style="font-size:15px;font-weight:700;line-height:1.2;margin-bottom:6px"></div>
+          <!-- inline meta: status + value side by side -->
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div id="dpStatusBadge"></div>
+            <div id="dpVal" style="font-size:13px;font-weight:600;font-family:'DM Mono',monospace;color:var(--accent)"></div>
+            <div id="dpPdfSection" style="display:none">
+              <button class="dp-pdf-open-btn" id="dpPdfBtn" onclick="openPdfFromPanel()" style="padding:3px 8px;font-size:11px">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+                PDF
+              </button>
+            </div>
+          </div>
+        </div>
+        <button onclick="closeDetail()" style="all:unset;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface);flex-shrink:0;margin-top:2px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
     </div>
-    <div class="dp-footer">
-      <button class="dp-sel-btn" id="dpSelBtn" onclick="selectFromPanel()">Selecionar este fornecedor</button>
+
+    <!-- main: observations textarea fills space -->
+    <div style="flex:1;display:flex;flex-direction:column;padding:12px 14px;gap:8px;min-height:0">
+      <div class="dp-label" style="margin-bottom:0">O que inclui / Observações</div>
+      <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Adicione observações, o que está incluso, condições…" style="flex:1;min-height:100px;resize:none"></textarea>
     </div>
+
+    <!-- footer: save + select -->
+    <div style="padding:10px 14px 14px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+      <button class="btn btn-secondary" onclick="saveObs()" style="flex:0 0 auto;padding:9px 16px">Salvar</button>
+      <button class="dp-sel-btn" id="dpSelBtn" onclick="selectFromPanel()" style="flex:1">Selecionar este fornecedor</button>
+    </div>
+
   </div>
 </div>
 
