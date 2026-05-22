@@ -171,6 +171,14 @@ body{
   transition:all .15s;color:var(--ink-4);
 }
 .info-btn:hover{border-color:var(--accent-2);color:var(--accent);background:var(--accent-light)}
+.pdf-btn{
+  width:20px;height:20px;border-radius:50%;
+  background:transparent;border:0.5px solid #B8D4C8;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;margin-left:4px;
+  transition:all .15s;color:var(--accent-2);
+}
+.pdf-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
 
 /* ── BADGES ── */
 .badge{
@@ -383,6 +391,15 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
   cursor:pointer;font-family:inherit;transition:background .15s;
 }
 .dp-save-obs:hover{background:var(--accent-2)}
+.dp-pdf-open-btn{
+  display:flex;align-items:center;gap:6px;
+  width:100%;padding:8px 12px;
+  background:var(--accent-light);color:var(--accent);
+  border:0.5px solid #B8D4C8;border-radius:8px;
+  font-size:12px;font-weight:600;font-family:inherit;
+  cursor:pointer;transition:all .15s;
+}
+.dp-pdf-open-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .dp-footer{
   padding:8px 12px;border-top:0.5px solid var(--border);
   flex-shrink:0;background:var(--card);
@@ -556,6 +573,16 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
             <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Nenhuma observação…"></textarea>
             <button class="dp-save-obs" onclick="saveObs()">Salvar observação</button>
           </div>
+          <div class="dp-section" id="dpPdfSection" style="display:none">
+            <div class="dp-label">PDF do Orçamento</div>
+            <button class="dp-pdf-open-btn" id="dpPdfBtn" onclick="openPdfFromPanel()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+              </svg>
+              Abrir PDF do Orçamento
+            </button>
+          </div>
         </div>
         <div class="dp-footer">
           <button class="dp-sel-btn" id="dpSelBtn" onclick="selectFromPanel()">Selecionar este fornecedor</button>
@@ -684,6 +711,7 @@ let COL_SUPPLIER = 3;
 let COL_VALUE    = 5;
 let COL_STATUS   = 7;
 let COL_OBS      = 9;
+let COL_PDF      = -1; // -1 = sem coluna de PDF detectada
 let printOrient  = 'portrait'; // 'portrait' | 'landscape'
 
 function setOrient(o) {
@@ -698,6 +726,7 @@ const HEADER_KEYWORDS = {
   value:    ['VALOR','PREÇO','PRECO','TOTAL','R$'],
   status:   ['STATUS','SITUAÇÃO','SITUACAO','ESTADO'],
   obs:      ['OBS','NOTA','DESCR','DETALHE','INCLUI','COMENTARIO','COMENTÁRIO'],
+  pdf:      ['PDF','ARQUIVO','LINK','DOCUMENTO','ANEXO'],
 };
 
 const STATUS_KEYWORDS = ['RECEBIDO','AGUARDANDO','NÃO SOLICITADO','NAO SOLICITADO','NÃO SOLIC','EM ANÁLISE','EM ANALISE'];
@@ -813,6 +842,7 @@ async function loadSheet() {
         if (detected.value    != null) COL_VALUE    = detected.value;
         if (detected.status   != null) COL_STATUS   = detected.status;
         if (detected.obs      != null) COL_OBS      = detected.obs;
+        if (detected.pdf      != null) COL_PDF      = detected.pdf;
         diagLines.push(`Cabeçalho detectado na linha ${headerRowIdx+1}`);
       } else {
         diagLines.push(`Cabeçalho não encontrado — detectando Status automaticamente`);
@@ -855,6 +885,7 @@ async function loadSheet() {
         const rawValue  = maxCol > COL_VALUE  ? row[COL_VALUE]       : '';
         const rawStatus = maxCol > COL_STATUS ? str(row[COL_STATUS]) : '';
         const rawObs    = maxCol > COL_OBS    ? str(row[COL_OBS])    : '';
+        const rawPdf    = COL_PDF >= 0 && maxCol > COL_PDF ? str(row[COL_PDF]) : '';
 
         const rawCatUp = rawCat.toUpperCase();
         const isCatNoise = ['TOTAL','RESUMO','VALOR','ANTIGO','OBSERV','#REF','#N/A'].some(w => rawCatUp.includes(w));
@@ -881,7 +912,7 @@ async function loadSheet() {
         sheetData.push({
           row: r, category: lastCategory || 'SEM CATEGORIA',
           supplier, value: parseValue(rawValue),
-          rawValue, status: rawStatus, obs: rawObs
+          rawValue, status: rawStatus, obs: rawObs, pdfPath: rawPdf
         });
       }
       diagLines.push('─'.repeat(50));
@@ -931,15 +962,15 @@ async function reloadSheet() {
 function loadDemoData() {
   document.getElementById('obra-nome').textContent = 'DEMO — Residência';
   sheetData = [
-    { row:3,  category:'OBRA CIVIL PISCINA', supplier:'RAFAEL PISCINAS', value:222697.26, rawValue:'R$ 222.697,26', status:'RECEBIDO', obs:'Sem bomba de aquecimento' },
-    { row:4,  category:'OBRA CIVIL PISCINA', supplier:'PROLAZER',         value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO', obs:'' },
-    { row:5,  category:'OBRA CIVIL',         supplier:'RCS',              value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
-    { row:9,  category:'PERGOLADO',          supplier:'UNIFLEX',          value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO', obs:'Manual. Somente toldo' },
-    { row:10, category:'PERGOLADO',          supplier:'UNIFLEX',          value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO', obs:'Motorizado. Somente toldo' },
-    { row:11, category:'PERGOLADO',          supplier:'UNIFLEX',          value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO', obs:'Motorizado. Com estrutura' },
-    { row:12, category:'PERGOLADO',          supplier:'TOLDELLI',         value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
-    { row:14, category:'MOBILIÁRIO EXTERNO', supplier:'ELEVATO CASA',     value:0,         rawValue:'',              status:'RECEBIDO', obs:'' },
-    { row:15, category:'MOBILIÁRIO EXTERNO', supplier:'BRETON',           value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'' },
+    { row:3,  category:'OBRA CIVIL PISCINA', supplier:'RAFAEL PISCINAS', value:222697.26, rawValue:'R$ 222.697,26', status:'RECEBIDO', obs:'Sem bomba de aquecimento', pdfPath:'https://example.com/orcamento-rafael.pdf' },
+    { row:4,  category:'OBRA CIVIL PISCINA', supplier:'PROLAZER',         value:215876.00, rawValue:'R$ 215.876,00', status:'RECEBIDO', obs:'', pdfPath:'' },
+    { row:5,  category:'OBRA CIVIL',         supplier:'RCS',              value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'', pdfPath:'' },
+    { row:9,  category:'PERGOLADO',          supplier:'UNIFLEX',          value:54000.00,  rawValue:'R$ 54.000,00',  status:'RECEBIDO', obs:'Manual. Somente toldo', pdfPath:'' },
+    { row:10, category:'PERGOLADO',          supplier:'UNIFLEX',          value:60000.00,  rawValue:'R$ 60.000,00',  status:'RECEBIDO', obs:'Motorizado. Somente toldo', pdfPath:'' },
+    { row:11, category:'PERGOLADO',          supplier:'UNIFLEX',          value:87300.00,  rawValue:'R$ 87.300,00',  status:'RECEBIDO', obs:'Motorizado. Com estrutura', pdfPath:'' },
+    { row:12, category:'PERGOLADO',          supplier:'TOLDELLI',         value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'', pdfPath:'' },
+    { row:14, category:'MOBILIÁRIO EXTERNO', supplier:'ELEVATO CASA',     value:0,         rawValue:'',              status:'RECEBIDO', obs:'', pdfPath:'' },
+    { row:15, category:'MOBILIÁRIO EXTERNO', supplier:'BRETON',           value:0,         rawValue:'',              status:'AGUARDANDO RETORNO', obs:'', pdfPath:'' },
   ];
   buildUI();
 }
@@ -1011,14 +1042,20 @@ function buildOptionRow(item, cat) {
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.01" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/>
       </svg>
     </button>
+    ${item.pdfPath ? `<button class="pdf-btn" title="Abrir PDF do orçamento" onclick="event.stopPropagation();openPdf(${item.row})">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+      </svg>
+    </button>` : ''}
   `;
   row.addEventListener('mousemove', (e) => {
-    if (e.target.closest('.info-btn')) return;
+    if (e.target.closest('.info-btn') || e.target.closest('.pdf-btn')) return;
     showDiffTip(e, item);
   });
   row.addEventListener('mouseleave', hideDiffTip);
   row.addEventListener('click', (e) => {
-    if (e.target.closest('.info-btn')) return;
+    if (e.target.closest('.info-btn') || e.target.closest('.pdf-btn')) return;
     toggleSelect(item, row);
   });
   return row;
@@ -1333,6 +1370,14 @@ function openDetail(rowIdx) {
 
   document.getElementById('dpObsEdit').value = item.obs || '';
 
+  // PDF section
+  const pdfSection = document.getElementById('dpPdfSection');
+  if (item.pdfPath) {
+    pdfSection.style.display = '';
+  } else {
+    pdfSection.style.display = 'none';
+  }
+
   const isSelected = selected[item.category] === item.row;
   const selBtn = document.getElementById('dpSelBtn');
   selBtn.textContent = isSelected ? 'Remover seleção' : 'Selecionar este fornecedor';
@@ -1341,6 +1386,49 @@ function openDetail(rowIdx) {
   document.getElementById('dp-empty').style.display   = 'none';
   const content = document.getElementById('dp-content');
   content.style.display = 'flex';
+}
+
+// ════════════════════════════════════════════
+// ABRIR PDF DO ORÇAMENTO
+// ════════════════════════════════════════════
+function openPdf(rowIdx) {
+  const item = sheetData.find(i => i.row === rowIdx);
+  if (!item || !item.pdfPath) { toast('Nenhum PDF vinculado a este orçamento'); return; }
+  _doOpenPdf(item.pdfPath);
+}
+
+function openPdfFromPanel() {
+  if (!panelItem || !panelItem.pdfPath) { toast('Nenhum PDF vinculado'); return; }
+  _doOpenPdf(panelItem.pdfPath);
+}
+
+function _doOpenPdf(rawPath) {
+  let url = rawPath.trim();
+
+  // Caminho Windows local (C:\...) → converte para file://
+  if (/^[a-zA-Z]:[\\\/]/.test(url)) {
+    url = 'file:///' + url.replace(/\\/g, '/');
+  }
+  // Caminho de rede UNC (\\servidor\...) → converte para file://
+  else if (url.startsWith('\\\\')) {
+    url = 'file:' + url.replace(/\\/g, '/');
+  }
+
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    // URL web/OneDrive/SharePoint → abre no navegador externo
+    try {
+      Office.context.ui.openBrowserWindow(url);
+    } catch(e) {
+      window.open(url, '_blank');
+    }
+  } else {
+    // Arquivo local → tenta abrir via window.open (funciona no Excel Desktop)
+    try {
+      window.open(url, '_blank');
+    } catch(e) {
+      toast('Não foi possível abrir: ' + e.message);
+    }
+  }
 }
 
 function closeDetail() {
