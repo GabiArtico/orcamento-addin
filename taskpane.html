@@ -201,7 +201,7 @@ body{
 /* ── COMPARE TABLE ── */
 .compare-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 .compare-table col.col-radio   { width:26px }
-.compare-table col.col-cat     { width:100px }
+.compare-table col.col-cat     { width:130px }
 .compare-table col.col-sup     { width:auto }
 .compare-table col.col-val     { width:120px }
 .compare-table col.col-status  { width:140px }
@@ -222,7 +222,8 @@ body{
 /* best-value: sem negrito, só cor */
 .best-value{color:var(--accent)}
 /* linha selecionada fica em negrito */
-.compare-table tr.cmp-selected td:not(.cat-cell):not(.td-radio){font-weight:600}
+.compare-table tr.cmp-selected td:not(.cat-cell):not(.td-radio){font-weight:700}
+.compare-table tr.cmp-selected td.td-sup-cell{font-size:13px}
 .option-row.selected .option-sup{font-weight:600}
 .option-row.selected .option-val{font-weight:600}
 
@@ -244,10 +245,10 @@ body{
   padding:8px 4px 8px 8px;
 }
 .compare-table .cat-cell{
-  font-size:10px;color:var(--ink);font-weight:700;
+  font-size:11px;color:var(--ink);font-weight:700;
   text-transform:uppercase;letter-spacing:.03em;
-  vertical-align:middle;padding-right:10px;
-  word-break:break-word;line-height:1.3;
+  vertical-align:middle;padding:8px 10px 8px 8px;
+  white-space:normal;line-height:1.3;text-align:center;
 }
 .compare-table td.cat-cell-first{vertical-align:middle}
 /* radio in compare table */
@@ -591,7 +592,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 
 <!-- DETAIL MODAL -->
 <div id="detail-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:flex-end;justify-content:center">
-  <div id="detail-modal" style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 -4px 32px rgba(0,0,0,.2);overflow:hidden">
+  <div id="detail-modal" style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:92vh;min-height:380px;display:flex;flex-direction:column;box-shadow:0 -4px 32px rgba(0,0,0,.2);overflow:hidden">
 
     <!-- compact top bar: name + meta + close -->
     <div style="padding:12px 14px 10px;border-bottom:0.5px solid var(--border);flex-shrink:0">
@@ -602,7 +603,13 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
           <!-- inline meta: status + value side by side -->
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <div id="dpStatusBadge"></div>
-            <div id="dpVal" style="font-size:13px;font-weight:600;font-family:'DM Mono',monospace;color:var(--accent)"></div>
+            <!-- editable value -->
+            <div style="display:flex;align-items:center;gap:4px">
+              <span id="dpValDisplay" style="font-size:13px;font-weight:600;font-family:'DM Mono',monospace;color:var(--accent)"></span>
+              <button id="dpValEditBtn" onclick="toggleValEdit()" style="all:unset;cursor:pointer;color:var(--ink-4);line-height:0;padding:2px" title="Editar valor">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            </div>
             <div id="dpPdfSection" style="display:none">
               <button class="dp-pdf-open-btn" id="dpPdfBtn" onclick="openPdfFromPanel()" style="padding:3px 8px;font-size:11px">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
@@ -612,6 +619,12 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
               </button>
             </div>
           </div>
+          <!-- val edit row -->
+          <div id="dpValEditRow" style="display:none;align-items:center;gap:6px;margin-top:6px">
+            <input id="dpValInput" type="text" placeholder="0,00" style="width:110px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Mono',monospace;color:var(--accent);outline:none;background:var(--card)" oninput="formatValInput(this)" onkeydown="if(event.key==='Enter')saveVal()"/>
+            <button onclick="saveVal()" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;color:var(--accent);padding:4px 10px;border:1px solid var(--accent);border-radius:6px">OK</button>
+            <button onclick="cancelValEdit()" style="all:unset;cursor:pointer;font-size:12px;color:var(--ink-4);padding:4px 6px">✕</button>
+          </div>
         </div>
         <button onclick="closeDetail()" style="all:unset;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface);flex-shrink:0;margin-top:2px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -620,14 +633,14 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
     </div>
 
     <!-- main: observations textarea fills space -->
-    <div style="flex:1;display:flex;flex-direction:column;padding:12px 14px;gap:8px;min-height:0">
+    <div style="flex:1;display:flex;flex-direction:column;padding:12px 14px 8px;gap:6px;min-height:0">
       <div class="dp-label" style="margin-bottom:0">O que inclui / Observações</div>
-      <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Adicione observações, o que está incluso, condições…" style="flex:1;min-height:100px;resize:none"></textarea>
+      <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Adicione observações, o que está incluso, condições…" style="flex:1;min-height:80px;resize:none"></textarea>
     </div>
 
-    <!-- footer: save + select -->
-    <div style="padding:10px 14px 14px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0">
-      <button class="btn btn-secondary" onclick="saveObs()" style="flex:0 0 auto;padding:9px 16px">Salvar</button>
+    <!-- footer: compact save + select -->
+    <div style="padding:8px 14px 14px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-shrink:0;align-items:center">
+      <button class="btn btn-secondary" onclick="saveObs()" style="flex:0 0 auto;padding:6px 14px;font-size:12px">Salvar obs.</button>
       <button class="dp-sel-btn" id="dpSelBtn" onclick="selectFromPanel()" style="flex:1">Selecionar este fornecedor</button>
     </div>
 
@@ -1013,12 +1026,12 @@ function buildOptionRow(item, cat) {
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.01" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/>
       </svg>
     </button>
-    ${item.pdfPath ? `<button class="pdf-btn" title="Abrir PDF do orçamento" onclick="event.stopPropagation();openPdf(${item.row})">
+    <button class="pdf-btn${item.pdfPath ? '' : ' pdf-absent'}" title="${item.pdfPath ? 'Abrir PDF do orçamento' : 'PDF não disponível'}" onclick="event.stopPropagation();if(this.classList.contains('pdf-absent'))return;openPdf(${item.row})">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
         <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
       </svg>
-    </button>` : ''}
+    </button>
   `;
   row.addEventListener('mousemove', (e) => {
     if (e.target.closest('.info-btn') || e.target.closest('.pdf-btn')) return;
@@ -1161,7 +1174,8 @@ function buildCompareTable() {
 
       // Supplier
       const tdSup = document.createElement('td');
-      tdSup.style.cssText = 'font-weight:500';
+      tdSup.className = 'td-sup-cell';
+      tdSup.style.cssText = 'font-weight:500;font-size:12.5px;transition:font-size .15s,font-weight .15s';
       tdSup.style.borderBottom = isLast ? groupBorder : innerBorder;
       tdSup.textContent = item.supplier;
       tr.appendChild(tdSup);
@@ -1336,12 +1350,18 @@ function openDetail(rowIdx) {
   document.getElementById('dpStatusBadge').innerHTML =
     `<span class="badge ${statusClass(item.status)}">${item.status || '—'}</span>`;
 
-  const valEl = document.getElementById('dpVal');
+  const valDisplay = document.getElementById('dpValDisplay');
+  const valInput   = document.getElementById('dpValInput');
   if (item.value > 0) {
-    valEl.innerHTML = `<div class="dp-val-big">${fmtBRL(item.value)}</div>`;
+    valDisplay.textContent = fmtBRL(item.value);
+    valInput.value = String(item.value).replace('.',',');
   } else {
-    valEl.innerHTML = `<div class="dp-val-nodata">Valor não informado</div>`;
+    valDisplay.textContent = 'Sem valor';
+    valDisplay.style.color = 'var(--ink-4)';
+    valDisplay.style.fontStyle = 'italic';
+    valInput.value = '';
   }
+  document.getElementById('dpValEditRow').style.display = 'none';
 
   document.getElementById('dpObsEdit').value = item.obs || '';
 
@@ -1398,6 +1418,59 @@ function _doOpenPdf(rawPath) {
     } catch(e) {
       toast('Não foi possível abrir: ' + e.message);
     }
+  }
+}
+
+function toggleValEdit() {
+  const row = document.getElementById('dpValEditRow');
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : 'flex';
+  if (!isOpen) document.getElementById('dpValInput').focus();
+}
+
+function cancelValEdit() {
+  document.getElementById('dpValEditRow').style.display = 'none';
+}
+
+function formatValInput(el) {
+  // Allow digits, comma, dot
+  el.value = el.value.replace(/[^0-9,.]/g, '');
+}
+
+async function saveVal() {
+  if (!panelItem) return;
+  const raw = document.getElementById('dpValInput').value.trim().replace(',','.');
+  const num = parseFloat(raw);
+  if (isNaN(num) || num < 0) { toast('Valor inválido'); return; }
+
+  panelItem.value = num;
+  const display = document.getElementById('dpValDisplay');
+  display.textContent = fmtBRL(num);
+  display.style.color = 'var(--accent)';
+  display.style.fontStyle = '';
+  document.getElementById('dpValEditRow').style.display = 'none';
+
+  // Update option-row display
+  const rowEl = document.querySelector(`.option-row[data-row="${panelItem.row}"]`);
+  if (rowEl) {
+    const valEl = rowEl.querySelector('.option-val');
+    if (valEl) { valEl.textContent = fmtBRL(num); valEl.classList.remove('no-val'); }
+  }
+  updateTotal();
+  buildCompareTable();
+
+  try {
+    await Excel.run(async (ctx) => {
+      let sheet;
+      try { sheet = ctx.workbook.worksheets.getItem('RESUMO'); }
+      catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
+      const cell = sheet.getRangeByIndexes(panelItem.row, COL_VALUE, 1, 1);
+      cell.values = [[num]];
+      await ctx.sync();
+      toast('Valor salvo ✓');
+    });
+  } catch(err) {
+    toast('Erro ao salvar valor: ' + err.message);
   }
 }
 
