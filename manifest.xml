@@ -13,12 +13,12 @@
   <DisplayName DefaultValue="Orçamento Add-in"/>
   <Description DefaultValue="Add-in para geração de orçamentos no Excel"/>
 
-  <IconUrl DefaultValue="https://gabiartico.github.io/orcamento-addin/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://gabiartico.github.io/orcamento-addin/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://gabiartico.github.io/orcamento-addin"/>
+  <IconUrl DefaultValue="http://localhost:3000/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="http://localhost:3000/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="http://localhost:3000"/>
 
   <AppDomains>
-    <AppDomain>https://gabiartico.github.io</AppDomain>
+    <AppDomain>http://localhost:3000</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -26,7 +26,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://gabiartico.github.io/orcamento-addin/taskpane.html"/>
+    <SourceLocation DefaultValue="http://localhost:3000/taskpane.html"/>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -75,14 +75,14 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://gabiartico.github.io/orcamento-addin/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://gabiartico.github.io/orcamento-addin/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://gabiartico.github.io/orcamento-addin/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="http://localhost:3000/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="http://localhost:3000/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="http://localhost:3000/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://gabiartico.github.io/orcamento-addin"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://gabiartico.github.io/orcamento-addin/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://gabiartico.github.io/orcamento-addin/taskpane.html"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="http://localhost:3000"/>
+        <bt:Url id="Commands.Url" DefaultValue="http://localhost:3000/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="http://localhost:3000/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Comece com o Orçamento Add-in"/>
@@ -91,7 +91,7 @@
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Add-in para geração de orçamentos"/>
-        <bt:String id="GetStarted.LearnMoreUrl" DefaultValue="https://gabiartico.github.io/orcamento-addin"/>
+        <bt:String id="GetStarted.LearnMoreUrl" DefaultValue="http://localhost:3000"/>
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Abre o painel de orçamentos"/>
       </bt:LongStrings>
     </Resources>
