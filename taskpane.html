@@ -10,8 +10,8 @@
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --ink:#1A1A14;--ink-2:#4A4A3A;--ink-3:#8A8A78;--ink-4:#C4C4B0;
-  --surface:#F5F3EE;--card:#FFFFFF;--accent:#1C3A22;--accent-2:#2D6A4F;
-  --accent-light:#EAF3DE;--red:#B83232;--red-light:#FBEAEA;
+  --surface:#F5F3EE;--card:#FFFFFF;--accent:#1A2E44;--accent-2:#1E5C8A;
+  --accent-light:#E0EDF8;--red:#B83232;--red-light:#FBEAEA;
   --warn:#A67C3A;--warn-light:#FFF8E6;--border:#E8E4DC;--r:10px;
 }
 html,body{height:100%;overflow:hidden}
@@ -104,10 +104,10 @@ body{
 .pane{display:none;flex:1;overflow-y:auto;padding:12px;padding-bottom:64px}
 .pane.active{display:block}
 #pane-selecionar{
-  display:none;flex-direction:column;padding:0;overflow:hidden;
+  display:none;flex-direction:column;padding:0;
 }
 #pane-selecionar.active{display:flex}
-#sel-top{flex:1;overflow-y:auto;min-height:80px}
+#sel-top{flex:1;overflow-y:auto}
 .pane-inner{padding:0 12px 12px}
 
 /* ── CATEGORY CARDS ── */
@@ -173,7 +173,7 @@ body{
 .info-btn:hover{border-color:var(--accent-2);color:var(--accent);background:var(--accent-light)}
 .pdf-btn{
   width:20px;height:20px;border-radius:50%;
-  background:transparent;border:0.5px solid #B8D4C8;
+  background:transparent;border:0.5px solid #93C5FD;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;flex-shrink:0;margin-left:4px;
   transition:all .15s;color:var(--accent-2);
@@ -186,7 +186,7 @@ body{
   font-size:9px;font-weight:600;padding:2px 7px;
   border-radius:20px;white-space:nowrap;
 }
-.badge-green{background:#BBF7D0;color:#14532D}
+.badge-green{background:#BFDBFE;color:#1E3A5F}
 .badge-yellow{background:#FDE68A;color:#78350F}
 .badge-gray{background:#D1D5DB;color:#1F2937}
 
@@ -236,7 +236,7 @@ body{
   box-shadow:0 2px 10px rgba(0,0,0,.15);
 }
 #diff-tip.visible{opacity:1}
-#diff-tip.cheaper{background:#DCFCE7;color:#14532D;border:0.5px solid #86EFAC}
+#diff-tip.cheaper{background:#DBEAFE;color:#1E3A5F;border:0.5px solid #93C5FD}
 #diff-tip.pricier{background:#FEE2E2;color:#991B1B;border:0.5px solid #FCA5A5}
 /* Radio column */
 .compare-table td.td-radio{
@@ -330,37 +330,14 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 .confirm-actions{display:flex;gap:8px}
 .confirm-actions .btn{flex:1}
 
-/* ── DRAG DIVIDER ── */
-#drag-divider{
-  height:10px;background:var(--surface);
-  border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);
-  cursor:row-resize;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  user-select:none;
-}
-.drag-grip{
-  width:32px;height:3px;border-radius:2px;background:var(--ink-4);
-}
-#drag-divider:hover .drag-grip{background:var(--ink-3)}
-
-/* ── DETAIL PANEL (inline bottom half) ── */
-#detailPanel{
-  flex-shrink:0;
-  height:42%;
-  min-height:120px;
-  max-height:70%;
-  background:var(--surface);
-  display:flex;flex-direction:column;
-  overflow:hidden;
-  border-top:none;
-}
-#dp-empty{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:8px;padding:16px;text-align:center;
-  font-size:11px;color:var(--ink-4);line-height:1.5;
-}
-#dp-content{
-  height:100%;flex-direction:column;
+/* ── DETAIL MODAL ── */
+#detail-modal-overlay{transition:opacity .2s}
+#detail-modal{animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+/* hint on option-row */
+.option-row .dbl-hint{
+  font-size:9px;color:var(--ink-4);margin-top:1px;
+  white-space:nowrap;
 }
 .dp-header{
   padding:10px 12px 8px;
@@ -395,7 +372,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
   display:flex;align-items:center;gap:6px;
   width:100%;padding:8px 12px;
   background:var(--accent-light);color:var(--accent);
-  border:0.5px solid #B8D4C8;border-radius:8px;
+  border:0.5px solid #93C5FD;border-radius:8px;
   font-size:12px;font-weight:600;font-family:inherit;
   cursor:pointer;transition:all .15s;
 }
@@ -429,7 +406,7 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
 .total-pill{background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.18);border-radius:8px;padding:5px 8px;text-align:center}
 .total-pill .p-label{font-size:8px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
 .total-pill .p-val{font-size:11px;font-weight:600;font-family:'DM Mono',monospace}
-.total-pill .p-val.up{color:#86EFAC}
+.total-pill .p-val.up{color:#93C5FD}
 .total-pill .p-val.dn{color:#FCA5A5}
 
 /* ── TOAST ── */
@@ -537,58 +514,6 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
       </div>
     </div>
 
-    <!-- DRAG DIVIDER -->
-    <div id="drag-divider">
-      <div class="drag-grip"></div>
-    </div>
-
-    <!-- BOTTOM: detail panel always visible -->
-    <div id="detailPanel">
-      <!-- Empty state -->
-      <div id="dp-empty">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35">
-          <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6M9 13h4"/>
-        </svg>
-        <span>Selecione um fornecedor para ver os detalhes</span>
-      </div>
-      <!-- Content -->
-      <div id="dp-content" style="display:none;height:100%;display:none;flex-direction:column">
-        <div class="dp-header">
-          <div style="flex:1;min-width:0">
-            <div class="dp-cat" id="dpCat"></div>
-            <div class="dp-sup" id="dpSup"></div>
-          </div>
-        </div>
-        <div class="dp-body">
-          <div class="dp-section">
-            <div class="dp-label">Status do orçamento</div>
-            <div id="dpStatusBadge"></div>
-          </div>
-          <div class="dp-section">
-            <div class="dp-label">Valor do orçamento</div>
-            <div id="dpVal"></div>
-          </div>
-          <div class="dp-section">
-            <div class="dp-label">Observações / O que inclui</div>
-            <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Nenhuma observação…"></textarea>
-            <button class="dp-save-obs" onclick="saveObs()">Salvar observação</button>
-          </div>
-          <div class="dp-section" id="dpPdfSection" style="display:none">
-            <div class="dp-label">PDF do Orçamento</div>
-            <button class="dp-pdf-open-btn" id="dpPdfBtn" onclick="openPdfFromPanel()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
-              </svg>
-              Abrir PDF do Orçamento
-            </button>
-          </div>
-        </div>
-        <div class="dp-footer">
-          <button class="dp-sel-btn" id="dpSelBtn" onclick="selectFromPanel()">Selecionar este fornecedor</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- PANE: COMPARAR -->
@@ -662,6 +587,50 @@ tr.cmp-selected .cmp-radio-dot{opacity:1}
       <button class="btn btn-danger" id="btn-clear">Limpar Tudo</button>
     </div>
   </div>
+
+
+<!-- DETAIL MODAL -->
+<div id="detail-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:flex-end;justify-content:center">
+  <div id="detail-modal" style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 -4px 32px rgba(0,0,0,.2);overflow:hidden">
+    <div class="dp-header">
+      <div style="flex:1;min-width:0">
+        <div class="dp-cat" id="dpCat"></div>
+        <div class="dp-sup" id="dpSup"></div>
+      </div>
+      <button onclick="closeDetail()" style="all:unset;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface);flex-shrink:0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dp-body" style="flex:1;overflow-y:auto">
+      <div class="dp-section">
+        <div class="dp-label">Status do orçamento</div>
+        <div id="dpStatusBadge"></div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-label">Valor do orçamento</div>
+        <div id="dpVal"></div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-label">Observações / O que inclui</div>
+        <textarea class="dp-obs-edit" id="dpObsEdit" placeholder="Nenhuma observação…"></textarea>
+        <button class="dp-save-obs" onclick="saveObs()">Salvar observação</button>
+      </div>
+      <div class="dp-section" id="dpPdfSection" style="display:none">
+        <div class="dp-label">PDF do Orçamento</div>
+        <button class="dp-pdf-open-btn" id="dpPdfBtn" onclick="openPdfFromPanel()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+          </svg>
+          Abrir PDF do Orçamento
+        </button>
+      </div>
+    </div>
+    <div class="dp-footer">
+      <button class="dp-sel-btn" id="dpSelBtn" onclick="selectFromPanel()">Selecionar este fornecedor</button>
+    </div>
+  </div>
+</div>
 
 </div><!-- #app -->
 
@@ -1058,6 +1027,10 @@ function buildOptionRow(item, cat) {
     if (e.target.closest('.info-btn') || e.target.closest('.pdf-btn')) return;
     toggleSelect(item, row);
   });
+  row.addEventListener('dblclick', (e) => {
+    if (e.target.closest('.info-btn') || e.target.closest('.pdf-btn')) return;
+    openDetail(item.row);
+  });
   return row;
 }
 
@@ -1370,22 +1343,17 @@ function openDetail(rowIdx) {
 
   document.getElementById('dpObsEdit').value = item.obs || '';
 
-  // PDF section
   const pdfSection = document.getElementById('dpPdfSection');
-  if (item.pdfPath) {
-    pdfSection.style.display = '';
-  } else {
-    pdfSection.style.display = 'none';
-  }
+  pdfSection.style.display = item.pdfPath ? '' : 'none';
 
   const isSelected = selected[item.category] === item.row;
   const selBtn = document.getElementById('dpSelBtn');
   selBtn.textContent = isSelected ? 'Remover seleção' : 'Selecionar este fornecedor';
   selBtn.className   = isSelected ? 'dp-sel-btn desel' : 'dp-sel-btn';
 
-  document.getElementById('dp-empty').style.display   = 'none';
-  const content = document.getElementById('dp-content');
-  content.style.display = 'flex';
+  // Show modal
+  const overlay = document.getElementById('detail-modal-overlay');
+  overlay.style.display = 'flex';
 }
 
 // ════════════════════════════════════════════
@@ -1432,8 +1400,7 @@ function _doOpenPdf(rawPath) {
 }
 
 function closeDetail() {
-  document.getElementById('dp-content').style.display = 'none';
-  document.getElementById('dp-empty').style.display   = 'flex';
+  document.getElementById('detail-modal-overlay').style.display = 'none';
   panelItem = null;
 }
 
@@ -1503,13 +1470,13 @@ document.getElementById('btn-export-sheet').addEventListener('click', async () =
       ];
       const range = sheet.getRangeByIndexes(0,0,rows.length,5);
       range.values = rows;
-      sheet.getRangeByIndexes(0,0,1,5).format.fill.color   = '#1C3A22';
+      sheet.getRangeByIndexes(0,0,1,5).format.fill.color   = '#1A2E44';
       sheet.getRangeByIndexes(0,0,1,5).format.font.color   = '#FFFFFF';
       sheet.getRangeByIndexes(0,0,1,5).format.font.bold    = true;
       const totRow = sheet.getRangeByIndexes(rows.length-1,0,1,5);
-      totRow.format.fill.color = '#EAF3DE';
+      totRow.format.fill.color = '#E0EDF8';
       totRow.format.font.bold  = true;
-      totRow.format.font.color = '#1C3A22';
+      totRow.format.font.color = '#1A2E44';
       range.format.autofitColumns();
       await ctx.sync();
       toast(`Aba "${name}" criada! ✓`);
@@ -1530,9 +1497,9 @@ document.getElementById('btn-mark-winners').addEventListener('click', async () =
       catch(e) { sheet = ctx.workbook.worksheets.getActiveWorksheet(); }
       for (const w of winners) {
         const range = sheet.getRangeByIndexes(w.row,0,1,20);
-        range.format.fill.color = '#EAF3DE';
+        range.format.fill.color = '#E0EDF8';
         range.format.font.bold  = true;
-        range.format.font.color = '#1C3A22';
+        range.format.font.color = '#1A2E44';
       }
       await ctx.sync();
       toast('Vencedores destacados! ✓');
@@ -1633,6 +1600,10 @@ document.getElementById('confirm-overlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('confirm-overlay')) closeConfirm();
 });
 
+document.getElementById('detail-modal-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('detail-modal-overlay')) closeDetail();
+});
+
 // ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
@@ -1697,8 +1668,8 @@ document.getElementById('btn-export-pdf').addEventListener('click', () => {
       rowsHtml += `
         <tr class="${isSelected?'row-selected':''}" style="border-bottom:${borderBottom}">
           ${catCell}
-          <td class="td-sup" style="border-bottom:${borderBottom};font-weight:${isSelected?'600':'500'};color:${isSelected?'#1C3A22':'#1A1A14'}">${item.supplier}</td>
-          <td class="td-val" style="border-bottom:${borderBottom};color:${isSelected?'#1C3A22':'#4A4A3A'};font-weight:${isSelected?'600':'400'}">${item.value > 0 ? fmtBRL(item.value) : '—'}</td>
+          <td class="td-sup" style="border-bottom:${borderBottom};font-weight:${isSelected?'600':'500'};color:${isSelected?'#1A2E44':'#1A1A14'}">${item.supplier}</td>
+          <td class="td-val" style="border-bottom:${borderBottom};color:${isSelected?'#1A2E44':'#4A4A3A'};font-weight:${isSelected?'600':'400'}">${item.value > 0 ? fmtBRL(item.value) : '—'}</td>
           <td class="td-status" style="border-bottom:${borderBottom}">${pdfBadge(item.status)}</td>
         </tr>`;
     });
@@ -1714,33 +1685,33 @@ document.getElementById('btn-export-pdf').addEventListener('click', () => {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;font-size:12.5px;color:#1A1A14;background:#F5F3EE}
-.page-header{background:#1C3A22;color:#fff;padding:12px 16px 10px;display:flex;align-items:center;gap:10px}
+.page-header{background:#1A2E44;color:#fff;padding:12px 16px 10px;display:flex;align-items:center;gap:10px}
 .page-header-title{font-size:14px;font-weight:600}
 .page-header-sub{font-size:10px;opacity:.55;margin-top:1px}
 .section-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#8A8A78;padding:12px 12px 8px}
 .wrap{padding:0 12px 80px}
-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #E8E4DC}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #CBD5E1}
 col.col-cat{width:130px}col.col-sup{width:auto}col.col-val{width:130px}col.col-status{width:150px}
 thead th{text-align:left;padding:6px 8px;color:#8A8A78;border-bottom:0.5px solid #E8E4DC;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 tbody td{padding:8px;vertical-align:middle;overflow:hidden}
 .td-cat{font-size:10px;color:#1A1A14;font-weight:700;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;padding-right:10px;word-break:break-word;line-height:1.3}
 .td-sup{font-weight:500;vertical-align:middle}
 .td-val{font-family:'DM Mono',monospace;font-size:12px;color:#4A4A3A;vertical-align:middle}
-.td-best{color:#1C3A22;font-weight:600}
+.td-best{color:#1A2E44;font-weight:600}
 .td-status{vertical-align:middle}
-.row-selected td:not(.td-cat){background:#EAF3DE}
-.row-selected .td-sup{color:#1C3A22;font-weight:600}
-.row-selected .td-val{color:#1C3A22;font-weight:600}
+.row-selected td:not(.td-cat){background:#E0EDF8}
+.row-selected .td-sup{color:#1A2E44;font-weight:600}
+.row-selected .td-val{color:#1A2E44;font-weight:600}
 .badge{display:inline-flex;align-items:center;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap}
-.badge-green{background:#BBF7D0;color:#14532D}.badge-yellow{background:#FDE68A;color:#78350F}.badge-gray{background:#D1D5DB;color:#1F2937}
-.total-bar{background:#1C3A22;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+.badge-green{background:#BFDBFE;color:#1E3A5F}.badge-yellow{background:#FDE68A;color:#78350F}.badge-gray{background:#D1D5DB;color:#1F2937}
+.total-bar{background:#1A2E44;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
 .t-label{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1px}
 .t-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-.02em}
 .t-right{display:flex;gap:12px;align-items:center}
 .total-pill{background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.18);border-radius:8px;padding:5px 10px;text-align:center}
 .p-label{font-size:8px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
 .p-val{font-size:11px;font-weight:600;font-family:'DM Mono',monospace}
-.p-val.up{color:#86EFAC}.p-val.dn{color:#FCA5A5}
+.p-val.up{color:#93C5FD}.p-val.dn{color:#FCA5A5}
 @media print{@page{margin:0;size:A4 ${printOrient}}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.total-bar{position:fixed;bottom:0;left:0;right:0}.wrap{padding-bottom:60px}}
 </style></head>
 <body>
@@ -1906,50 +1877,7 @@ function showError(msg) {
   document.getElementById('total-bar').style.display = 'none';
 }
 
-// ════════════════════════════════════════════
-// DRAG DIVIDER — resize detail panel
-// ════════════════════════════════════════════
-(function() {
-  const divider = document.getElementById('drag-divider');
-  const panel   = document.getElementById('detailPanel');
-  const pane    = document.getElementById('pane-selecionar');
-  if (!divider || !panel || !pane) return;
-
-  let dragging = false, startY = 0, startH = 0;
-
-  function onStart(e) {
-    dragging = true;
-    startY   = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-    startH   = panel.offsetHeight;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor     = 'row-resize';
-    e.preventDefault();
-  }
-  function onMove(e) {
-    if (!dragging) return;
-    const y    = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-    const dy   = startY - y;                // dragging up = bigger panel
-    const paneH = pane.offsetHeight;
-    const minH  = 120;
-    const maxH  = Math.round(paneH * 0.75);
-    const newH  = Math.max(minH, Math.min(maxH, startH + dy));
-    panel.style.height = newH + 'px';
-    e.preventDefault();
-  }
-  function onEnd() {
-    if (!dragging) return;
-    dragging = false;
-    document.body.style.userSelect = '';
-    document.body.style.cursor     = '';
-  }
-
-  divider.addEventListener('mousedown',  onStart);
-  divider.addEventListener('touchstart', onStart, { passive: false });
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('touchmove', onMove, { passive: false });
-  document.addEventListener('mouseup',   onEnd);
-  document.addEventListener('touchend',  onEnd);
-})();
+// Drag divider removed — detail now opens as modal on double-click
 </script>
 </body>
 </html>
