@@ -163,22 +163,27 @@ body{
 }
 .option-val.no-val{font-size:10px;color:var(--ink-4);font-family:'DM Sans',monospace;font-weight:400}
 .option-row.selected .option-val{color:var(--accent)}
+/* info-btn: mesmo estilo base que pdf-btn */
 .info-btn{
   width:20px;height:20px;border-radius:50%;
-  background:transparent;border:0.5px solid var(--border);
+  background:transparent;border:1.5px solid #C8C0B4;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;flex-shrink:0;margin-left:4px;
-  transition:all .15s;color:var(--ink-4);
+  transition:all .15s;color:#C8C0B4;
 }
 .info-btn:hover{border-color:var(--accent-2);color:var(--accent);background:var(--accent-light)}
+/* pdf-btn: ausente = cinza; presente = preenchido azul */
 .pdf-btn{
   width:20px;height:20px;border-radius:50%;
-  background:transparent;border:0.5px solid #93C5FD;
+  background:transparent;border:1.5px solid #C8C0B4;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;flex-shrink:0;margin-left:4px;
-  transition:all .15s;color:var(--accent-2);
+  transition:all .15s;color:#C8C0B4;
 }
-.pdf-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.pdf-btn:not(.pdf-absent){background:var(--accent-2);border-color:transparent;color:#fff}
+.pdf-btn:not(.pdf-absent):hover{background:var(--accent);border-color:transparent;color:#fff}
+.pdf-btn.pdf-absent{cursor:default}
+.pdf-btn.pdf-absent:hover{background:transparent;border-color:#C8C0B4;color:#C8C0B4}
 
 /* ── BADGES ── */
 .badge{
@@ -1175,7 +1180,7 @@ function buildCompareTable() {
       // Supplier
       const tdSup = document.createElement('td');
       tdSup.className = 'td-sup-cell';
-      tdSup.style.cssText = 'font-weight:500;font-size:12.5px;transition:font-size .15s,font-weight .15s';
+      tdSup.style.cssText = `font-weight:${isSelected ? '700' : '500'};font-size:${isSelected ? '13px' : '12.5px'};transition:font-size .15s,font-weight .15s`;
       tdSup.style.borderBottom = isLast ? groupBorder : innerBorder;
       tdSup.textContent = item.supplier;
       tr.appendChild(tdSup);
